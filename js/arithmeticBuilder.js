@@ -21,10 +21,12 @@ class ArithmeticBuilder {
 
         const onesSum = aR + bR;
         if (onesSum < 10) {
-            const hint = this._deltaHint('right', aR, onesSum, window.i18n.t('explain.addOnes', {bR}));
+            const hint = bR === 0 ? window.i18n.t('explain.addOnesNone', {value: aR}) : this._deltaHint('right', aR, onesSum, window.i18n.t('explain.addOnes', {bR}));
             steps.push({ id: 'a-ones-add', title: window.i18n.t('step.addOnes'), target: { left: aL, right: onesSum }, animate: 'count-up', cue: 'highlight-right', narration: window.i18n.t('narration.addOnes', {aR, bR, onesSum}), explain: hint });
             const tensTotal = aL + bL;
-            steps.push({ id: 'a-add-tens', title: window.i18n.t('step.addTens'), target: { left: tensTotal, right: onesSum }, animate: 'count-up', cue: 'highlight-left', narration: window.i18n.t('narration.addTens', {bL}), explain: this._deltaHint('left', aL, tensTotal, window.i18n.t('explain.openTens', {bL})) });
+            const tensNarration = bL === 0 ? window.i18n.t('narration.addTensNone', {value: aL}) : window.i18n.t('narration.addTens', {bL});
+            const tensExplain = bL === 0 ? window.i18n.t('explain.addTensNone', {value: aL}) : this._deltaHint('left', aL, tensTotal, window.i18n.t('explain.openTens', {bL}));
+            steps.push({ id: 'a-add-tens', title: window.i18n.t('step.addTens'), target: { left: tensTotal, right: onesSum }, animate: 'count-up', cue: 'highlight-left', narration: tensNarration, explain: tensExplain });
             steps.push({ id: 'a-confirm', title: window.i18n.t('step.final'), target: { left: tensTotal, right: onesSum }, animate: 'instant', narration: window.i18n.t('narration.confirmAdd', {a, b, result: a + b}) });
             return steps;
         }
@@ -84,14 +86,15 @@ class ArithmeticBuilder {
         } else {
             // No borrow needed
             const newRight = right - bR;
-            const hint = this._deltaHint('right', right, newRight, window.i18n.t('explain.subtractOnes', {bR}));
+            const hint = bR === 0 ? window.i18n.t('explain.subOnesNone', {value: right}) : this._deltaHint('right', right, newRight, window.i18n.t('explain.subtractOnes', {bR}));
             steps.push({ id: 's-sub-ones', title: window.i18n.t('step.subOnes'), target: { left, right: newRight }, animate: 'count-down', cue: 'highlight-right', narration: window.i18n.t('narration.subOnes', {right, bR, newRight}), explain: hint });
             right = newRight;
         }
         // Subtract tens
         const newLeft = left - bL;
-        const hintL = this._deltaHint('left', left, newLeft, window.i18n.t('explain.subtractTens', {bL}));
-        steps.push({ id: 's-sub-tens', title: window.i18n.t('step.subTens'), target: { left: newLeft, right }, animate: 'count-down', cue: 'highlight-left', narration: window.i18n.t('narration.leftBecomesTens', {newLeft}), explain: hintL });
+        const subTensNarration = bL === 0 ? window.i18n.t('narration.subTensNone', {value: left}) : window.i18n.t('narration.leftBecomesTens', {newLeft});
+        const hintL = bL === 0 ? window.i18n.t('explain.subTensNone', {value: left}) : this._deltaHint('left', left, newLeft, window.i18n.t('explain.subtractTens', {bL}));
+        steps.push({ id: 's-sub-tens', title: window.i18n.t('step.subTens'), target: { left: newLeft, right }, animate: 'count-down', cue: 'highlight-left', narration: subTensNarration, explain: hintL });
         steps.push({ id: 's-confirm', title: window.i18n.t('step.final'), target: { left: newLeft, right }, animate: 'instant', narration: window.i18n.t('narration.confirmSub', {a, b, result: a - b}) });
         return steps;
     }
