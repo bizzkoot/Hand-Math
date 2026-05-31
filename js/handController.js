@@ -1214,37 +1214,43 @@ class HandController {
      * @returns {boolean} True if positions are valid for counting
      */
     validateCountingPosition(handSide) {
-        const expectedValue = this.getHandValue(handSide);
-        
-        // Set hand to expected value and compare positions
-        const originalPositions = { ...this.currentPositions[handSide] };
-        
-        if (handSide === 'right') {
-            this.setRightHandNumber(expectedValue);
-        } else {
-            this.setLeftHandNumber(expectedValue * 10);
-        }
-        
-        // Check if positions match
-        const threshold = 0.1;
-        let isValid = true;
-        
-        for (const finger of ['thumb', 'index', 'middle', 'ring', 'pinky']) {
-            const expected = this.targetPositions[handSide][finger];
-            const original = originalPositions[finger];
-            
-            if (Math.abs(expected - original) > threshold) {
-                isValid = false;
-                break;
-            }
-        }
-        
-        // Restore original positions
-        for (const finger of ['thumb', 'index', 'middle', 'ring', 'pinky']) {
-            this.setFingerPosition(handSide, finger, originalPositions[finger]);
-        }
-        
-        return isValid;
+        // Read-only validation: check if targetPositions form a valid counting pattern.
+        // Previous implementation had a critical side-effect bug — it saved currentPositions
+        // (mid-animation), overwrote targetPositions via setRightHandNumber/setLeftHandNumber,
+        // then "restored" targets to the mid-animation snapshot. This caused interactive
+        // finger toggles (Challenge mode) to stop at partial positions instead of fully
+        // open/closed, producing wrong articulation.
+        const targets = this.targetPositions[handSide];
+        if (!targets) return false;
+
+        const threshold = 0.5;
+        const currentState = {
+            thumb:  targets.thumb  > threshold,
+            index:  targets.index  > threshold,
+            middle: targets.middle > threshold,
+            ring:   targets.ring   > threshold,
+            pinky:  targets.pinky  > threshold
+        };
+
+        // All valid counting patterns (thumb=5, others=1 each)
+        const patterns = [
+            { thumb: false, index: false, middle: false, ring: false, pinky: false }, // 0
+            { thumb: false, index: true,  middle: false, ring: false, pinky: false }, // 1
+            { thumb: false, index: true,  middle: true,  ring: false, pinky: false }, // 2
+            { thumb: false, index: true,  middle: true,  ring: true,  pinky: false }, // 3
+            { thumb: false, index: true,  middle: true,  ring: true,  pinky: true  }, // 4
+            { thumb: true,  index: false, middle: false, ring: false, pinky: false }, // 5
+            { thumb: true,  index: true,  middle: false, ring: false, pinky: false }, // 6
+            { thumb: true,  index: true,  middle: true,  ring: false, pinky: false }, // 7
+            { thumb: true,  index: true,  middle: true,  ring: true,  pinky: false }, // 8
+            { thumb: true,  index: true,  middle: true,  ring: true,  pinky: true  }  // 9
+        ];
+
+        return patterns.some(pattern =>
+            ['thumb', 'index', 'middle', 'ring', 'pinky'].every(
+                finger => currentState[finger] === pattern[finger]
+            )
+        );
     }
 
     /**
