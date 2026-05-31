@@ -638,7 +638,13 @@ class UiBindings {
         this.autoStatus.hidden = !next;
         this.autoStatus.textContent = `Auto: ${next ? 'On' : 'Off'}`;
         if (this.speedGroup) this.speedGroup.hidden = !next;
-        if (this.btnNarrate) this.btnNarrate.hidden = !next;
+        if (this.btnNarrate) {
+            this.btnNarrate.hidden = !next;
+            if (next) {
+                this._ttsEnabled = true;
+                this.btnNarrate.setAttribute('aria-pressed', 'true');
+            }
+        }
         if (next) this._startAutoLoop(); else this._stopAutoLoop();
     }
 
@@ -688,7 +694,7 @@ class UiBindings {
         if (s.mode === 'Tutorial') {
             panelHeading.textContent = 'Tutorial';
             panelQuestion.textContent = `▷ ${s.problem.a} = ?`;
-            panelExplanation.textContent = 'Left = tens, Right = ones. Thumb = five.';
+            panelExplanation.textContent = 'Left = tens · Right = ones · Thumb = 5';
         } else if (s.mode === 'Arithmetic') {
             panelHeading.textContent = 'Arithmetic';
             panelQuestion.textContent = 'Add or subtract with carries/borrows';
@@ -708,7 +714,7 @@ class UiBindings {
             } else if (addOverflow) {
                 panelExplanation.textContent = 'Result exceeds 99. Choose smaller numbers or try subtraction.';
             } else {
-                panelExplanation.textContent = 'Left = tens, Right = ones. Thumb = five.';
+                panelExplanation.textContent = 'Left = tens · Right = ones · Thumb = 5';
             }
         } else if (s.mode === 'Challenge') {
             panelHeading.textContent = 'Challenge';
@@ -793,15 +799,24 @@ class UiBindings {
     }
 
     _speak(text) {
-        if (!this._ttsEnabled) return;
-        if (!('speechSynthesis' in window)) return;
-        if (!text || !text.trim()) return;
+        if (!this._ttsEnabled) return Promise.resolve();
+        if (!('speechSynthesis' in window)) return Promise.resolve();
+        if (!text || !text.trim()) return Promise.resolve();
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text.trim());
+        let ttsText = text.trim();
+        ttsText = ttsText.replace(/ \- /g, ' minus ');
+        ttsText = ttsText.replace(/ \+ /g, ' plus ');
+        ttsText = ttsText.replace(/ \= /g, ' equals ');
+        const utterance = new SpeechSynthesisUtterance(ttsText);
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
-        window.speechSynthesis.speak(utterance);
+        return new Promise(resolve => {
+            const fallback = setTimeout(resolve, 10000);
+            utterance.onend = () => { clearTimeout(fallback); resolve(); };
+            utterance.onerror = () => { clearTimeout(fallback); resolve(); };
+            window.speechSynthesis.speak(utterance);
+        });
     }
 
     _startAutoLoop() {
@@ -829,7 +844,14 @@ class UiBindings {
                 return;
             }
             const currentStep = s.steps[s.index];
-            if (currentStep?.narration) this._speak(currentStep.narration);
+            if (currentStep) {
+                const parts = [];
+                if (currentStep.narration) parts.push(currentStep.narration);
+                if (currentStep.explain) parts.push(currentStep.explain);
+                if (Array.isArray(currentStep.details)) parts.push(...currentStep.details);
+                const text = parts.join('. ');
+                if (text) await this._speak(text);
+            }
             await this.o.next();
             this._autoTimer = setTimeout(tick, effectiveDelay());
         };

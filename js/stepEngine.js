@@ -1,11 +1,11 @@
 class StepEngine {
     constructor(adapter) {
         this.adapter = adapter;
-        this.auto = { enabled: false, msPerStep: 900 };
+        this.auto = { enabled: false, msPerStep: 1800 };
         this._onComplete = null;
     }
 
-    setAuto(enabled, msPerStep = 900) {
+    setAuto(enabled, msPerStep = 1800) {
         this.auto.enabled = !!enabled;
         this.auto.msPerStep = msPerStep;
     }

@@ -27,10 +27,12 @@ test.describe('Teaching UI - Info, Fullscreen, Auto', () => {
     await page.goto(local ? 'index.html' : '/index.html');
     await page.waitForFunction(() => window.__HM__ && window.handMathApp);
     await page.click('#tabTutorial');
-    // Enable auto
+    // Enable auto (also enables TTS by default)
     await page.click('#btnAuto');
+    // Disable TTS for headless (speechSynthesis onend may never fire)
+    await page.evaluate(() => { window.__HM__.ui._ttsEnabled = false; });
     // Wait for at least one advancement
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(4000);
     const idx = await page.evaluate(() => window.__HM__.orchestrator.state().index);
     expect(idx).toBeGreaterThan(0);
     // Turn off auto to avoid stray progression

@@ -1,7 +1,7 @@
 # Hand Math Teaching UI Spec (Single‑Page, No Scrolling)
 
 Purpose
-- Teach users to count and compute 0–99 using two hands by treating thumbs as 5 and mapping left = tens, right = ones.
+- Teach users to count and compute 0–99 using two hands by treating thumbs as 5 and mapping left hand = tens place, right hand = ones place.
 - Present crystal‑clear, step‑by‑step visual guidance with the existing 3D hands (unchanged animation logic).
 - Add Arithmetic Practice for + / − on 0–99 with animated carries/borrows that map to left/right hands.
 
@@ -110,7 +110,7 @@ Subtraction (−)
   - Halo on changed right fingers during decrements.
 
 Guidance & Help
-- Info Card: very short, illustrated overview of “Thumb=5; Left=tens; Right=ones; Tens first, then ones”.
+- Info Card: very short, illustrated overview of “Thumb=5; Left=tens place; Right=ones place; Tens first, then ones”.
 - Guided Tour: 2–3 tooltips (Scene, Steps Panel, Number Pad) with “Got it”.
 - Autoplay (Auto ▶): animate current step sequence automatically; pauses at end.
 
@@ -132,7 +132,7 @@ Modes & Controls
   - Quick Tasks: demo sequences and modes.
 
 Copy Guidelines (explainer text)
-- Core idea: “Thumb counts as five. Left hand adds tens. Right hand adds ones.”
+- Core idea: “Left hand = tens place · Right hand = ones place · Thumb = 5”
 - Examples:
   - “47 = 40 (left: index+middle+ring+pinky) + 7 (right: thumb+index+middle).”
   - “35 = 30 (left: index+middle+ring) + 5 (right: thumb).”
@@ -143,7 +143,7 @@ Accessibility & Responsiveness
 - Fit in 1280×800 without scroll; scale elements at smaller sizes while keeping both hands readable.
 
 Micro‑copy Examples
-- Tutorial: “47 = 40 (left: four fingers) + 7 (right: thumb+index+middle).”
+- Tutorial steps show the arithmetic value: “Left shows: 4 tens = 40” → “Right shows: 7 ones = 7” → “40 + 7 = 47”.
 - Addition: “Carry 1 to tens when ones ≥ 10.”
 - Subtraction: “Borrow 10 from tens if ones can’t subtract.”
 

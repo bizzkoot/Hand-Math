@@ -7,9 +7,9 @@ class ArithmeticBuilder {
         const left = Math.floor(number / 10);
         const right = number % 10;
         return [
-            { id: 't-show-tens', target: { left, right: 0 }, animate: 'step', cue: 'highlight-left', narration: `Left shows tens: ${left} tens` },
-            { id: 't-show-ones', target: { left, right }, animate: 'step', cue: 'highlight-right', narration: `Right shows ones: ${right} ones` },
-            { id: 't-confirm', target: { left, right }, animate: 'instant', narration: `Together: ${number}` }
+            { id: 't-show-tens', title: 'Tens', target: { left, right: 0 }, animate: 'step', cue: 'highlight-left', narration: `Left shows ${left * 10}` },
+            { id: 't-show-ones', title: 'Ones', target: { left, right }, animate: 'step', cue: 'highlight-right', narration: `Right shows ${right}` },
+            { id: 't-confirm', title: 'Result', target: { left, right }, animate: 'instant', narration: `${number}` }
         ];
     }
 
@@ -25,7 +25,7 @@ class ArithmeticBuilder {
             steps.push({ id: 'a-ones-add', title: 'Step 1: Add ones', target: { left: aL, right: onesSum }, animate: 'count-up', cue: 'highlight-right', narration: `${aR} + ${bR} = ${onesSum}`, explain: hint });
             const tensTotal = aL + bL;
             steps.push({ id: 'a-add-tens', title: 'Step 2: Add tens', target: { left: tensTotal, right: onesSum }, animate: 'count-up', cue: 'highlight-left', narration: `Add ${bL} tens`, explain: this._deltaHint('left', aL, tensTotal, `Open ${bL} tens`) });
-            steps.push({ id: 'a-confirm', title: 'Final', target: { left: tensTotal, right: onesSum }, animate: 'instant', narration: `Answer: ${tensTotal}${onesSum}` });
+            steps.push({ id: 'a-confirm', title: 'Final', target: { left: tensTotal, right: onesSum }, animate: 'instant', narration: `${a} + ${b} = ${a + b}` });
             return steps;
         }
 
@@ -40,15 +40,15 @@ class ArithmeticBuilder {
             target: { left: aL, right: aR }, // no finger movement
             animate: 'instant',
             cue: null,
-            narration: `${aR} + ${bR} is easier as 10 − ${complement}`,
+            narration: `${aR} + ${bR} is easier as 10 - ${complement}`,
             details: [
-                `Trick: 10 − ${bR} = ${complement}`,
+                `Trick: 10 - ${bR} = ${complement}`,
                 `We will remove ${complement} on the right`
             ]
         });
         // Subtract complement on right in one decisive motion
         const diff = this._diffFingers(aR, rightAfter);
-        const hintSub = this._deltaHint('right', aR, rightAfter, `Right: ${aR} − ${complement} = ${rightAfter}`);
+        const hintSub = this._deltaHint('right', aR, rightAfter, `Right: ${aR} - ${complement} = ${rightAfter}`);
         steps.push({
             id: 'a-ones-sub-complement',
             title: `Remove ${complement} on right`,
@@ -61,7 +61,7 @@ class ArithmeticBuilder {
         // Add tens with carry applied here
         const tensTotal = aL + bL + 1;
         steps.push({ id: 'a-add-tens', title: 'Step 2: Add the tens', target: { left: tensTotal, right: rightAfter }, animate: 'count-up', cue: 'highlight-left', narration: `Add ${bL} tens + carry 1`, explain: this._deltaHint('left', aL, tensTotal, `Open ${bL + 1} tens`) });
-        steps.push({ id: 'a-confirm', title: 'Final', target: { left: tensTotal, right: rightAfter }, animate: 'instant', narration: `Answer: ${tensTotal}${rightAfter}` });
+        steps.push({ id: 'a-confirm', title: 'Final', target: { left: tensTotal, right: rightAfter }, animate: 'instant', narration: `${a} + ${b} = ${a + b}` });
         return steps;
     }
 
@@ -69,30 +69,30 @@ class ArithmeticBuilder {
         const steps = [];
         const aL = Math.floor(a / 10), aR = a % 10;
         const bL = Math.floor(b / 10), bR = b % 10;
-        steps.push({ id: 's-show-operands', target: { left: aL, right: aR }, animate: 'instant', narration: `${a} − ${b}` });
+        steps.push({ id: 's-show-operands', target: { left: aL, right: aR }, animate: 'instant', narration: `${a} - ${b}` });
 
         let left = aL, right = aR;
         if (right < bR) {
-            // Borrow path with mental math: right ← aR + (10 − bR)
+            // Borrow path with mental math: right ← aR + (10 - bR)
             const complement = 10 - bR; // e.g., for 7, complement = 3
-            steps.push({ id: 's-setup', title: 'Step 1: Set up', target: { left, right }, animate: 'instant', narration: `${a} − ${b}`, explain: 'Left = tens, Right = ones' });
+            steps.push({ id: 's-setup', title: 'Step 1: Set up', target: { left, right }, animate: 'instant', narration: `${a} - ${b}`, explain: 'Left = tens, Right = ones' });
             steps.push({ id: 's-borrow', title: 'Borrow 10', target: { left: left - 1, right }, animate: 'instant', cue: 'borrow', narration: 'Close one finger on left (borrow 10)' });
             const newRight = right + complement; // effectively aR + (10 - bR)
-            const hintRight = this._deltaHint('right', right, newRight, `Right: ${right} + (10 − ${bR}) = ${newRight}`);
+            const hintRight = this._deltaHint('right', right, newRight, `Right: ${right} + (10 - ${bR}) = ${newRight}`);
             steps.push({ id: 's-ones-after-borrow', title: `Ones after borrow`, target: { left: left - 1, right: newRight }, animate: 'count-up', cue: 'highlight-right', narration: `Right becomes ${newRight}`, explain: hintRight });
             left = left - 1; right = newRight; // update
         } else {
             // No borrow needed
             const newRight = right - bR;
             const hint = this._deltaHint('right', right, newRight, `Subtract ${bR} on the right`);
-            steps.push({ id: 's-sub-ones', title: 'Step 1: Subtract ones', target: { left, right: newRight }, animate: 'count-down', cue: 'highlight-right', narration: `${right} − ${bR} = ${newRight}`, explain: hint });
+            steps.push({ id: 's-sub-ones', title: 'Step 1: Subtract ones', target: { left, right: newRight }, animate: 'count-down', cue: 'highlight-right', narration: `${right} - ${bR} = ${newRight}`, explain: hint });
             right = newRight;
         }
         // Subtract tens
         const newLeft = left - bL;
         const hintL = this._deltaHint('left', left, newLeft, `Subtract ${bL} tens`);
         steps.push({ id: 's-sub-tens', title: 'Step 2: Subtract tens', target: { left: newLeft, right }, animate: 'count-down', cue: 'highlight-left', narration: `Left becomes ${newLeft} tens`, explain: hintL });
-        steps.push({ id: 's-confirm', title: 'Final', target: { left: newLeft, right }, animate: 'instant', narration: `Answer: ${newLeft}${right}` });
+        steps.push({ id: 's-confirm', title: 'Final', target: { left: newLeft, right }, animate: 'instant', narration: `${a} - ${b} = ${a - b}` });
         return steps;
     }
 
