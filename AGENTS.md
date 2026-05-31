@@ -32,6 +32,16 @@
 - PRs must include: concise description, linked issues, test plan, and screenshots for visual changes (before/after from `index.html` or task pages).
 - Keep PRs focused; update or add tests for changed behavior.
 
+## Third-Party Attribution (Legal)
+- The 3D hand model **"Rigged Hand" by Elena FF** is licensed under **CC BY-SA 4.0** and **must be credited** wherever the asset is used. Credit is shown live at `#assetCredits` in `index.html` and documented in `assets/license.txt`.
+- Three.js and its addons (`vendor/threejs/`) are MIT-licensed.
+
+## i18n System
+- `I18n` class in `js/i18n.js` with 240+ keys each for English and Bahasa Melayu.
+- Static fallback strings in JS; dynamic overrides in `locales/en.json` and `locales/ms.json`.
+- HTML attributes `data-i18n="key"` and `data-i18n-title="key"` are replaced on language switch.
+- Language persisted to `localStorage` key `hm-lang`.
+
 ## Security & Configuration Tips
 - Do not commit secrets to `.env`; this is a static client app.
 - Large binary assets belong in `assets/` and should be optimized; prefer links over embedding when feasible.
