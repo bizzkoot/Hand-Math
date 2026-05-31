@@ -1581,6 +1581,13 @@ class HandMathApp {
             optimalScale = 0.45;
             handSpacing = 0.8;
             this._log('info','📏 ADJUSTMENT: Wide container detected');
+        } else if (aspectRatio < 1.0) {
+            // Mobile Portrait / very narrow container
+            optimalFOV = 40;
+            optimalDistance = 4.2;
+            optimalScale = 0.35;
+            handSpacing = 0.45;
+            this._log('info','📏 ADJUSTMENT: Narrow container detected');
         } else if (aspectRatio < 1.5) {
             // Tall container - fixed height should prevent extreme cases
             optimalFOV = 42;

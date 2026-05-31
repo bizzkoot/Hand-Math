@@ -29,28 +29,34 @@
                 </div>
             </div>
             <div class="hm-header-right">
-                <select id="langSwitcher" class="hm-lang-select" title="Language / Bahasa" data-i18n-title="lang.selectTitle">
-                    <option value="en" data-i18n="lang.en">English</option>
-                    <option value="ms" data-i18n="lang.ms">Bahasa Melayu</option>
-                </select>
-                <div id="hmSkin" class="hm-skin" aria-label="Skin tone picker">
-                    <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" aria-label="Skin tone 1"></button>
-                    <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" aria-label="Skin tone 2"></button>
-                    <button class="hm-swatch" data-hex="#c79a6b" title="#c79a6b" aria-label="Skin tone 3"></button>
-                    <button class="hm-swatch" data-hex="#a47250" title="#a47250" aria-label="Skin tone 4"></button>
-                    <button class="hm-swatch" data-hex="#7a4f35" title="#7a4f35" aria-label="Skin tone 5"></button>
-                    <button class="hm-swatch" data-hex="#4d3325" title="#4d3325" aria-label="Skin tone 6"></button>
-                    <input id="hmSkinHex" class="hm-hex" type="text" inputmode="text" spellcheck="false" placeholder="#hex" aria-label="Custom hex" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxlength="7" />
+                <button id="btnSettings" class="hm-btn hm-btn-icon" aria-label="Settings" title="Settings" aria-expanded="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <div id="configGroup" class="hm-config-group">
+                    <select id="langSwitcher" class="hm-lang-select" title="Language / Bahasa" data-i18n-title="lang.selectTitle">
+                        <option value="en" data-i18n="lang.en">English</option>
+                        <option value="ms" data-i18n="lang.ms">Bahasa Melayu</option>
+                    </select>
+                    <div id="hmSkin" class="hm-skin" aria-label="Skin tone picker">
+                        <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" aria-label="Skin tone 1"></button>
+                        <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" aria-label="Skin tone 2"></button>
+                        <button class="hm-swatch" data-hex="#c79a6b" title="#c79a6b" aria-label="Skin tone 3"></button>
+                        <button class="hm-swatch" data-hex="#a47250" title="#a47250" aria-label="Skin tone 4"></button>
+                        <button class="hm-swatch" data-hex="#7a4f35" title="#7a4f35" aria-label="Skin tone 5"></button>
+                        <button class="hm-swatch" data-hex="#4d3325" title="#4d3325" aria-label="Skin tone 6"></button>
+                        <input id="hmSkinHex" class="hm-hex" type="text" inputmode="text" spellcheck="false" placeholder="#hex" aria-label="Custom hex" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxlength="7" />
+                    </div>
+                    <button id="btnTheme" class="hm-btn hm-btn-icon" aria-label="Toggle Theme" title="Toggle Theme">
+                        <svg class="theme-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                        <svg class="theme-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </button>
+                    <button id="btnSound" class="hm-btn hm-btn-icon" aria-label="Mute Sounds" title="Mute Sounds" aria-pressed="true">
+                        <svg class="sound-on" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                        <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                    </button>
+                    <button id="btnInfo" class="hm-btn hm-btn-icon" aria-label="Info">i</button>
+                    <button id="btnFullscreen" class="hm-btn hm-btn-icon" aria-label="Fullscreen">□</button>
                 </div>
-                <button id="btnTheme" class="hm-btn hm-btn-icon" aria-label="Toggle Theme" title="Toggle Theme">
-                    <svg class="theme-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                    <svg class="theme-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                </button>
-                <button id="btnSound" class="hm-btn hm-btn-icon" aria-label="Mute Sounds" title="Mute Sounds" aria-pressed="true">
-                    <svg class="sound-on" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                    <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-                </button>
-                <button id="btnInfo" class="hm-btn hm-btn-icon" aria-label="Info">i</button>
                 <button id="btnReset" class="hm-btn" aria-keyshortcuts="R" data-i18n="btn.reset">Reset</button>
                 <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false" data-i18n="btn.auto">Auto ▶</button>
                 <span id="speedGroup" class="hm-speed-group" hidden>
@@ -59,7 +65,6 @@
                     <button id="btnSpeedUp" class="hm-btn hm-btn-icon" aria-label="Faster">+</button>
                 </span>
                 <button id="btnNarrate" class="hm-btn hm-btn-icon" aria-pressed="false" title="Narrate steps aloud" hidden aria-label="Toggle narration">♪</button>
-                <button id="btnFullscreen" class="hm-btn hm-btn-icon" aria-label="Fullscreen">□</button>
             </div>
         </header>
 

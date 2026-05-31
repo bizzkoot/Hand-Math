@@ -114,6 +114,8 @@ class UiBindings {
         this.btnFullscreen = document.getElementById('btnFullscreen');
         this.btnTheme = document.getElementById('btnTheme');
         this.btnSound = document.getElementById('btnSound');
+        this.btnSettings = document.getElementById('btnSettings');
+        this.configGroup = document.getElementById('configGroup');
         this.btnAdd = document.getElementById('btnAdd');
         this.btnSub = document.getElementById('btnSub');
         this.autoStatus = document.getElementById('autoStatus');
@@ -183,6 +185,23 @@ class UiBindings {
             if (!this._ttsEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
         });
         this.btnFullscreen?.addEventListener('click', () => { this.soundSynth.playClick(); this._toggleFullscreen(); });
+        
+        this.btnSettings?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.soundSynth.playClick();
+            const isOpen = this.configGroup?.classList.contains('is-open');
+            this.configGroup?.classList.toggle('is-open', !isOpen);
+            this.btnSettings.setAttribute('aria-expanded', String(!isOpen));
+        });
+
+        document.addEventListener('click', (e) => {
+            if (this.configGroup?.classList.contains('is-open')) {
+                if (!this.configGroup.contains(e.target) && e.target !== this.btnSettings && !this.btnSettings?.contains(e.target)) {
+                    this.configGroup.classList.remove('is-open');
+                    this.btnSettings?.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
         
         this.btnTheme?.addEventListener('click', () => {
             this.soundSynth.playClick();

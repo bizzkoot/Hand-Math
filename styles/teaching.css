@@ -57,6 +57,8 @@
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 1002;
 }
 .hm-title { 
     font-family: var(--font-display);
@@ -68,6 +70,15 @@
 .hm-tabs { display:flex; gap:8px; margin-left:12px; }
 .hm-header-left { display:flex; align-items:center; gap:12px; }
 .hm-header-right { display:flex; align-items:center; gap:8px; }
+
+.hm-config-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#btnSettings {
+    display: none;
+}
 
 /* Language switcher */
 .hm-lang-select {
@@ -167,13 +178,15 @@
     -webkit-backdrop-filter: blur(12px) saturate(180%);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
     transition: background 0.3s, border-color 0.3s;
+    height: 100%;
+    overflow: hidden;
 }
 
 .hm-panel-heading { font-family: var(--font-display); font-size:20px; font-weight:700; }
 .hm-panel-question { font-family: var(--font-display); font-size:17px; color:var(--hm-accent2); font-weight:600; }
 .hm-panel-explanation { font-size:14px; color:var(--hm-muted); }
 
-.hm-steps { list-style:none; display:flex; flex-direction:column; gap:8px; margin:0; padding:0; overflow-y: auto; max-height: calc(100% - 150px); }
+.hm-steps { list-style:none; display:flex; flex-direction:column; gap:8px; margin:0; padding:0; overflow-y: auto; flex: 1; min-height: 0; }
 .hm-step { 
     padding:12px; 
     border-radius:12px; 
@@ -204,7 +217,7 @@
 .hm-op { font-family: var(--font-display); font-size:20px; font-weight:700; }
 .hm-answer { color: var(--hm-accent); }
 
-.hm-panel-controls { margin-top:auto; display:flex; flex-direction:column; gap:8px; }
+.hm-panel-controls { margin-top:auto; display:flex; flex-direction:column; gap:8px; flex-shrink: 0; }
 .hm-op-switch { display:flex; gap:6px; }
 .hm-mode-filter { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .hm-label { font-size:12px; color: var(--hm-muted); }
@@ -465,5 +478,166 @@
 
 #btnSound .sound-on, #btnSound .sound-off {
     pointer-events: none;
+}
+
+/* Responsive / Mobile styles */
+@media (max-width: 860px) {
+    #btnSettings {
+        display: inline-flex;
+    }
+    .hm-config-group {
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        position: absolute;
+        top: 54px;
+        right: 16px;
+        background: var(--hm-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        z-index: 1001;
+        box-shadow: var(--shadow-lg);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        gap: 12px;
+        min-width: 240px;
+    }
+    .hm-config-group.is-open {
+        display: flex;
+    }
+    .hm-config-group .hm-btn,
+    .hm-config-group .hm-lang-select,
+    .hm-config-group .hm-skin {
+        width: 100%;
+        max-width: none;
+        justify-content: center;
+    }
+    .hm-config-group .hm-lang-select {
+        height: 36px;
+    }
+    .hm-config-group .hm-skin {
+        justify-content: space-between;
+        padding: 4px 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .hm-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+    .hm-header-left {
+        justify-content: space-between;
+        width: 100%;
+    }
+    .hm-title {
+        font-size: 18px;
+    }
+    .hm-tabs {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+    .hm-tab {
+        flex: 1;
+        text-align: center;
+        padding: 6px 2px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+    .hm-header-right {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+    .hm-config-group {
+        top: 94px;
+        right: 12px;
+    }
+    .hm-content {
+        height: calc(100vh - 96px);
+    }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+    .hm-content {
+        flex-direction: column;
+        padding: 8px;
+        gap: 8px;
+        overflow: hidden;
+    }
+    .hm-scene {
+        height: 38vh;
+        min-height: 240px;
+        flex: none;
+    }
+    .hm-panel {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        padding: 12px;
+        gap: 8px;
+    }
+    .hm-steps {
+        /* inherits flex: 1; min-height: 0; from desktop styling */
+    }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .hm-title {
+        display: none; /* Hide title to make space for buttons */
+    }
+    .hm-header {
+        padding: 6px 12px;
+    }
+    .hm-content {
+        height: calc(100vh - 46px);
+        padding: 6px 8px;
+        gap: 8px;
+    }
+    .hm-panel {
+        width: 320px;
+        min-width: 0;
+        padding: 10px;
+        gap: 6px;
+    }
+    .hm-panel-heading {
+        font-size: 16px;
+    }
+    .hm-panel-question {
+        font-size: 14px;
+    }
+    .hm-panel-explanation {
+        font-size: 12px;
+    }
+    .hm-steps {
+        gap: 4px;
+        max-height: calc(100% - 110px);
+    }
+    .hm-step {
+        padding: 8px;
+        font-size: 12px;
+    }
+    .hm-arith-prompt {
+        padding: 6px;
+    }
+    .hm-op {
+        font-size: 16px;
+    }
+    .hm-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+    .hm-btn-icon {
+        width: 30px;
+        height: 28px;
+    }
 }
 
