@@ -188,6 +188,8 @@
 .hm-step-controls { display:flex; gap:6px; align-items:center; }
 .hm-step-status { margin-top:6px; color: var(--hm-muted); font-size:12px; min-height:1em; }
 .hm-auto { color: var(--hm-muted); }
+.hm-speed-group { display:flex; align-items:center; gap:2px; }
+.hm-speed-label { min-width:32px; text-align:center; font-size:13px; color:var(--hm-muted); font-weight:500; }
 
 .hm-numberpad { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
 .hm-pad-row { display:flex; flex-wrap:wrap; gap:6px; }

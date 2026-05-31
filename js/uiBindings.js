@@ -77,10 +77,16 @@ class SoundSynth {
     }
 }
 
+const SPEED_MIN = 0.1;
+const SPEED_MAX = 3.0;
+const SPEED_STEP = 0.1;
+
 class UiBindings {
     constructor(orchestrator) {
         this.o = orchestrator;
         this.soundSynth = new SoundSynth();
+        this._speed = 1.0;
+        this._ttsEnabled = false;
         this._wire();
         this._initChallenge();
         this._render();
@@ -111,6 +117,11 @@ class UiBindings {
         this.btnAdd = document.getElementById('btnAdd');
         this.btnSub = document.getElementById('btnSub');
         this.autoStatus = document.getElementById('autoStatus');
+        this.speedGroup = document.getElementById('speedGroup');
+        this.speedLabel = document.getElementById('speedLabel');
+        this.btnSpeedDown = document.getElementById('btnSpeedDown');
+        this.btnSpeedUp = document.getElementById('btnSpeedUp');
+        this.btnNarrate = document.getElementById('btnNarrate');
         this.stepStatus = document.getElementById('stepStatus');
         this.infoModal = document.getElementById('infoModal');
         this.infoClose = document.getElementById('infoClose');
@@ -163,6 +174,14 @@ class UiBindings {
         });
         this.btnReset.addEventListener('click', () => { this.soundSynth.playClick(); this.o.reset(); });
         this.btnAuto.addEventListener('click', () => { this.soundSynth.playClick(); this._toggleAuto(); });
+        this.btnSpeedDown?.addEventListener('click', () => { this.soundSynth.playClick(); this._adjustSpeed(-1); });
+        this.btnSpeedUp?.addEventListener('click', () => { this.soundSynth.playClick(); this._adjustSpeed(1); });
+        this.btnNarrate?.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            this._ttsEnabled = !this._ttsEnabled;
+            this.btnNarrate.setAttribute('aria-pressed', String(this._ttsEnabled));
+            if (!this._ttsEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+        });
         this.btnFullscreen?.addEventListener('click', () => { this.soundSynth.playClick(); this._toggleFullscreen(); });
         
         this.btnTheme?.addEventListener('click', () => {
@@ -618,7 +637,16 @@ class UiBindings {
         this.btnAuto.setAttribute('aria-pressed', String(next));
         this.autoStatus.hidden = !next;
         this.autoStatus.textContent = `Auto: ${next ? 'On' : 'Off'}`;
+        if (this.speedGroup) this.speedGroup.hidden = !next;
+        if (this.btnNarrate) this.btnNarrate.hidden = !next;
         if (next) this._startAutoLoop(); else this._stopAutoLoop();
+    }
+
+    _adjustSpeed(dir) {
+        const next = parseFloat((this._speed + dir * SPEED_STEP).toFixed(1));
+        if (next < SPEED_MIN || next > SPEED_MAX) return;
+        this._speed = next;
+        if (this.speedLabel) this.speedLabel.textContent = next.toFixed(1) + '\u00d7';
     }
 
     _render() {
@@ -764,8 +792,21 @@ class UiBindings {
         }
     }
 
+    _speak(text) {
+        if (!this._ttsEnabled) return;
+        if (!('speechSynthesis' in window)) return;
+        if (!text || !text.trim()) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.trim());
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+
     _startAutoLoop() {
         this._stopAutoLoop();
+        const effectiveDelay = () => this.o.engine.auto.msPerStep / this._speed;
         const tick = async () => {
             const s = this.o.state();
             const guardBlocked = (s.mode === 'Arithmetic') && (
@@ -773,11 +814,26 @@ class UiBindings {
                 (s.problem.op === '+' && (s.problem.a + s.problem.b) > 99)
             );
             if (!this.o.engine.auto.enabled || guardBlocked) return;
-            if (s.index >= s.steps.length) return;
+            if (s.index >= s.steps.length) {
+                await new Promise(r => setTimeout(r, effectiveDelay()));
+                if (s.mode === 'Arithmetic') {
+                    const prob = this._randomValidPractice();
+                    try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
+                    this.o.setProblem(prob.a, prob.b, prob.op);
+                } else {
+                    const newNum = Math.floor(Math.random() * 100);
+                    try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
+                    this.o.setTutorialNumber(newNum);
+                }
+                this._autoTimer = setTimeout(tick, effectiveDelay());
+                return;
+            }
+            const currentStep = s.steps[s.index];
+            if (currentStep?.narration) this._speak(currentStep.narration);
             await this.o.next();
-            this._autoTimer = setTimeout(tick, this.o.engine.auto.msPerStep);
+            this._autoTimer = setTimeout(tick, effectiveDelay());
         };
-        this._autoTimer = setTimeout(tick, this.o.engine.auto.msPerStep);
+        this._autoTimer = setTimeout(tick, effectiveDelay());
     }
     _stopAutoLoop() { if (this._autoTimer) { clearTimeout(this._autoTimer); this._autoTimer = null; } }
 
