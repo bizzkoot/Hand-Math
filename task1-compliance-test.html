@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 1 Compliance Test - Hand Visibility Analysis</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, sans-serif;
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Replicate exact scene container from main app */
+        .scene-container {
+            position: relative;
+            background-color: #0f0f23;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            min-height: 600px;
+            margin-bottom: 20px;
+        }
+        
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .analysis {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .measurement {
+            background: #0f0f23;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #51cf66;
+        }
+        
+        .requirement {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #ffd43b;
+        }
+        
+        .success { border-left-color: #51cf66; }
+        .error { border-left-color: #ff6b6b; }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #339af0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #228be6;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 Task 1 Compliance Test: Hand Visibility Analysis</h1>
+        
+        <div class="requirement">
+            <h3>📋 Task 1 Requirements (DoD):</h3>
+            <ul>
+                <li>SHALL display hands with correct orientations</li>
+                <li>SHALL show backs of palms facing user in fixed view</li>
+                <li>SHALL be hands side by side, backs facing user</li>
+                <li>SHALL NOT require camera controls or panning</li>
+                <li>SHALL have fingers pointing up</li>
+            </ul>
+        </div>
+
+        <!-- Exact scene container replica -->
+        <div id="scene-container" class="scene-container">
+            <canvas id="three-canvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <button onclick="testOptimalPositioning()">Test Current Settings</button>
+            <button onclick="calculateOptimalScale()">Calculate Optimal Scale</button>
+            <button onclick="testFingerOrientation()">Test Finger Orientation</button>
+            <button onclick="generateOptimalConfig()">Generate Optimal Config</button>
+        </div>
+
+        <div class="analysis">
+            <h3>📊 Scene Container Analysis</h3>
+            <div id="container-measurements"></div>
+        </div>
+
+        <div class="analysis">
+            <h3>🔍 Hand Positioning Analysis</h3>
+            <div id="positioning-analysis"></div>
+        </div>
+
+        <div class="analysis">
+            <h3>⚙️ Optimal Configuration</h3>
+            <div id="optimal-config"></div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="vendor/threejs/three.min.js"></script>
+    <script src="vendor/threejs/GLTFLoader.js"></script>
+
+    <script>
+        let scene, camera, renderer;
+        let leftHand, rightHand;
+        let containerWidth, containerHeight;
+
+        function initScene() {
+            const container = document.getElementById('scene-container');
+            containerWidth = container.clientWidth;
+            containerHeight = container.clientHeight;
+
+            console.log(`Scene container dimensions: ${containerWidth}x${containerHeight}`);
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x2a2a2a);
+
+            // Camera setup - start with current settings
+            const aspect = containerWidth / containerHeight;
+            camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+            camera.position.set(0, 0.2, 3.5);
+            camera.lookAt(0, 0, 0);
+            window.camera = camera;
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('three-canvas'),
+                antialias: true 
+            });
+            renderer.setSize(containerWidth, containerHeight);
+            renderer.setClearColor(0x2a2a2a);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            scene.add(directionalLight);
+
+            // Display container measurements
+            displayContainerMeasurements();
+        }
+
+        function displayContainerMeasurements() {
+            const measurements = document.getElementById('container-measurements');
+            measurements.innerHTML = `
+                <div class="measurement">
+                    <strong>Container Dimensions:</strong> ${containerWidth}px × ${containerHeight}px<br>
+                    <strong>Aspect Ratio:</strong> ${(containerWidth/containerHeight).toFixed(2)}<br>
+                    <strong>Camera FOV:</strong> ${camera.fov}°<br>
+                    <strong>Camera Position:</strong> [${camera.position.x}, ${camera.position.y}, ${camera.position.z}]
+                </div>
+            `;
+        }
+
+        async function loadTestHands() {
+            const loader = new THREE.GLTFLoader();
+            
+            try {
+                // Load right hand
+                const rightGltf = await new Promise((resolve, reject) => {
+                    loader.load('assets/models/hand_right.gltf', resolve, undefined, reject);
+                });
+                
+                rightHand = rightGltf.scene;
+                window.rightHand = rightHand;
+                rightHand.position.set(0.6, -0.1, 0);
+                rightHand.rotation.set(-0.1, -Math.PI/2, 0);
+                rightHand.scale.set(0.4, 0.4, 0.4);
+                scene.add(rightHand);
+
+                // Load left hand
+                const leftGltf = await new Promise((resolve, reject) => {
+                    loader.load('assets/models/hand_left.gltf', resolve, undefined, reject);
+                });
+                
+                leftHand = leftGltf.scene;
+                window.leftHand = leftHand;
+                leftHand.position.set(-0.6, -0.1, 0);
+                leftHand.rotation.set(-0.1, Math.PI/2, 0);
+                leftHand.scale.set(0.4, 0.4, 0.4);
+                scene.add(leftHand);
+
+                console.log('✅ Both hands loaded');
+                return true;
+            } catch (error) {
+                console.error('❌ Hand loading failed:', error);
+                return false;
+            }
+        }
+
+        function testOptimalPositioning() {
+            if (!leftHand || !rightHand) {
+                alert('Hands not loaded yet. Please wait and try again.');
+                return;
+            }
+
+            // Calculate actual bounding boxes
+            const leftBox = new THREE.Box3().setFromObject(leftHand);
+            const rightBox = new THREE.Box3().setFromObject(rightHand);
+            const combinedBox = new THREE.Box3();
+            combinedBox.union(leftBox);
+            combinedBox.union(rightBox);
+
+            // Calculate screen projection
+            const frustum = new THREE.Frustum();
+            const matrix = new THREE.Matrix4().multiplyMatrices(
+                camera.projectionMatrix,
+                camera.matrixWorldInverse
+            );
+            frustum.setFromProjectionMatrix(matrix);
+
+            const leftVisible = frustum.intersectsBox(leftBox);
+            const rightVisible = frustum.intersectsBox(rightBox);
+
+            // Calculate screen space coverage
+            const leftScreenPos = getScreenPosition(leftHand.position);
+            const rightScreenPos = getScreenPosition(rightHand.position);
+
+            const analysis = document.getElementById('positioning-analysis');
+            analysis.innerHTML = `
+                <div class="measurement ${leftVisible && rightVisible ? 'success' : 'error'}">
+                    <h4>Visibility Test:</h4>
+                    Left Hand Visible: ${leftVisible ? '✅' : '❌'}<br>
+                    Right Hand Visible: ${rightVisible ? '✅' : '❌'}<br>
+                    Both Visible: ${leftVisible && rightVisible ? '✅' : '❌'}
+                </div>
+                <div class="measurement">
+                    <h4>3D World Positions:</h4>
+                    Left Hand: [${leftHand.position.x.toFixed(2)}, ${leftHand.position.y.toFixed(2)}, ${leftHand.position.z.toFixed(2)}]<br>
+                    Right Hand: [${rightHand.position.x.toFixed(2)}, ${rightHand.position.y.toFixed(2)}, ${rightHand.position.z.toFixed(2)}]<br>
+                    Scale: [${leftHand.scale.x.toFixed(2)}, ${leftHand.scale.y.toFixed(2)}, ${leftHand.scale.z.toFixed(2)}]
+                </div>
+                <div class="measurement">
+                    <h4>Screen Space Positions:</h4>
+                    Left Hand Screen: [${leftScreenPos.x.toFixed(0)}px, ${leftScreenPos.y.toFixed(0)}px]<br>
+                    Right Hand Screen: [${rightScreenPos.x.toFixed(0)}px, ${rightScreenPos.y.toFixed(0)}px]<br>
+                    Distance Apart: ${Math.abs(rightScreenPos.x - leftScreenPos.x).toFixed(0)}px
+                </div>
+                <div class="measurement">
+                    <h4>Bounding Box Analysis:</h4>
+                    Combined Size: [${(combinedBox.max.x - combinedBox.min.x).toFixed(2)}, ${(combinedBox.max.y - combinedBox.min.y).toFixed(2)}, ${(combinedBox.max.z - combinedBox.min.z).toFixed(2)}]<br>
+                    Combined Center: [${((combinedBox.max.x + combinedBox.min.x)/2).toFixed(2)}, ${((combinedBox.max.y + combinedBox.min.y)/2).toFixed(2)}, ${((combinedBox.max.z + combinedBox.min.z)/2).toFixed(2)}]
+                </div>
+            `;
+
+            animate();
+        }
+
+        function calculateOptimalScale() {
+            // Calculate ideal scale to fit both hands in container with margin
+            const availableWidth = containerWidth * 0.8; // 80% of container width for safety margin
+            const availableHeight = containerHeight * 0.7; // 70% of container height
+
+            // Assume current hand models are about 1.5 units wide each at scale 1.0
+            // With two hands side by side, we need about 3.0 units total width
+            const currentWorldWidth = 2.4; // Estimated width for both hands at current positions
+            
+            // Calculate scale needed to fit in screen space
+            const worldToScreen = getWorldToScreenScale();
+            const optimalScale = Math.min(
+                availableWidth / (currentWorldWidth * worldToScreen),
+                availableHeight / (2.0 * worldToScreen) // Estimated hand height
+            );
+
+            // Calculate optimal camera distance
+            const optimalCameraZ = calculateOptimalCameraDistance();
+
+            const config = document.getElementById('optimal-config');
+            config.innerHTML = `
+                <div class="measurement success">
+                    <h4>📐 Calculated Optimal Settings:</h4>
+                    <strong>Hand Scale:</strong> ${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)}<br>
+                    <strong>Camera Distance (Z):</strong> ${optimalCameraZ.toFixed(1)}<br>
+                    <strong>Camera FOV:</strong> ${calculateOptimalFOV().toFixed(0)}°<br>
+                    <strong>Hand X Positions:</strong> Left: ${(-0.7).toFixed(1)}, Right: ${(0.7).toFixed(1)}<br>
+                    <strong>Hand Y Position:</strong> ${(-0.2).toFixed(1)} (slightly below center)<br>
+                </div>
+                <div class="measurement">
+                    <h4>🎯 Implementation Code:</h4>
+                    <pre style="background: #0f0f23; padding: 15px; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+// Optimal camera setup
+camera = new THREE.PerspectiveCamera(${calculateOptimalFOV().toFixed(0)}, aspect, 0.1, 1000);
+camera.position.set(0, 0.2, ${optimalCameraZ.toFixed(1)});
+
+// Optimal hand positioning
+leftHand.position.set(-0.7, -0.2, 0);
+leftHand.rotation.set(-0.1, Math.PI/2, 0);  // Back facing user
+leftHand.scale.set(${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)}, ${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)}, ${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)});
+
+rightHand.position.set(0.7, -0.2, 0);
+rightHand.rotation.set(-0.1, -Math.PI/2, 0); // Back facing user
+rightHand.scale.set(${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)}, ${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)}, ${Math.max(0.2, Math.min(0.5, optimalScale)).toFixed(2)});
+                    </pre>
+                </div>
+            `;
+        }
+
+        function testFingerOrientation() {
+            if (!leftHand || !rightHand) {
+                alert('Hands not loaded yet.');
+                return;
+            }
+
+            // Check if fingers are pointing up (Y+ direction in world space)
+            const leftUp = new THREE.Vector3(0, 1, 0);
+            const rightUp = new THREE.Vector3(0, 1, 0);
+
+            // Transform to world space
+            leftUp.applyMatrix4(leftHand.matrixWorld);
+            rightUp.applyMatrix4(rightHand.matrixWorld);
+
+            const analysis = document.getElementById('positioning-analysis');
+            analysis.innerHTML += `
+                <div class="measurement">
+                    <h4>👆 Finger Orientation Test:</h4>
+                    Left Hand Up Vector: [${leftUp.x.toFixed(2)}, ${leftUp.y.toFixed(2)}, ${leftUp.z.toFixed(2)}]<br>
+                    Right Hand Up Vector: [${rightUp.x.toFixed(2)}, ${rightUp.y.toFixed(2)}, ${rightUp.z.toFixed(2)}]<br>
+                    Fingers Pointing Up: ${leftUp.y > 0.5 && rightUp.y > 0.5 ? '✅' : '❌'}
+                </div>
+            `;
+        }
+
+        function generateOptimalConfig() {
+            calculateOptimalScale();
+            
+            // Apply the optimal settings and test
+            if (leftHand && rightHand) {
+                const optimalScale = 0.3; // Safe conservative value
+                const optimalZ = 4.2;
+                const optimalFOV = 40;
+
+                camera.fov = optimalFOV;
+                camera.position.z = optimalZ;
+                camera.updateProjectionMatrix();
+
+                leftHand.position.set(-0.7, -0.2, 0);
+                leftHand.scale.set(optimalScale, optimalScale, optimalScale);
+                
+                rightHand.position.set(0.7, -0.2, 0);
+                rightHand.scale.set(optimalScale, optimalScale, optimalScale);
+
+                setTimeout(() => {
+                    testOptimalPositioning();
+                    testFingerOrientation();
+                }, 100);
+            }
+        }
+
+        // Helper functions
+        function getScreenPosition(worldPosition) {
+            const vector = worldPosition.clone().project(camera);
+            return {
+                x: (vector.x * 0.5 + 0.5) * containerWidth,
+                y: (-vector.y * 0.5 + 0.5) * containerHeight
+            };
+        }
+
+        function getWorldToScreenScale() {
+            // Calculate how much 1 world unit equals in screen pixels at current camera distance
+            const tempGeometry = new THREE.PlaneGeometry(1, 1);
+            const tempMaterial = new THREE.MeshBasicMaterial();
+            const tempMesh = new THREE.Mesh(tempGeometry, tempMaterial);
+            tempMesh.position.set(0, 0, 0);
+            
+            const corners = [
+                new THREE.Vector3(-0.5, -0.5, 0),
+                new THREE.Vector3(0.5, 0.5, 0)
+            ];
+            
+            const screenCorners = corners.map(corner => {
+                const projected = corner.clone().project(camera);
+                return {
+                    x: (projected.x * 0.5 + 0.5) * containerWidth,
+                    y: (-projected.y * 0.5 + 0.5) * containerHeight
+                };
+            });
+            
+            return Math.abs(screenCorners[1].x - screenCorners[0].x);
+        }
+
+        function calculateOptimalCameraDistance() {
+            // Calculate distance needed to fit both hands with 20% margin
+            const targetWorldWidth = 1.6; // Both hands should fit in this world space width
+            const fov = camera.fov * Math.PI / 180;
+            const targetScreenWidth = containerWidth * 0.8;
+            
+            // Using camera projection math: screenWidth = worldWidth * (screenHeight/2) / (worldZ * tan(fov/2))
+            const optimalZ = (targetWorldWidth * containerHeight) / (2 * targetScreenWidth * Math.tan(fov / 2));
+            
+            return Math.max(3.0, Math.min(6.0, optimalZ)); // Clamp between reasonable values
+        }
+
+        function calculateOptimalFOV() {
+            // Calculate FOV needed to fit content at current camera distance
+            const currentZ = camera.position.z;
+            const targetWorldHeight = 2.5; // Total height we want to show
+            const fov = 2 * Math.atan(targetWorldHeight / (2 * currentZ)) * 180 / Math.PI;
+            
+            return Math.max(35, Math.min(50, fov)); // Clamp between reasonable FOV values
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Initialize everything
+        async function init() {
+            initScene();
+            const handsLoaded = await loadTestHands();
+            
+            if (handsLoaded) {
+                animate();
+                // Auto-run initial analysis
+                setTimeout(() => {
+                    testOptimalPositioning();
+                    testFingerOrientation();
+                }, 1000);
+            }
+        }
+
+        // Wait for Three.js to load
+        function waitForThree() {
+            if (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined') {
+                init();
+            } else {
+                setTimeout(waitForThree, 100);
+            }
+        }
+
+        waitForThree();
+    </script>
+</body>
+</html>

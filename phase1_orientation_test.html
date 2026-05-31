@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1: Hand Orientation Test</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
+        #debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            z-index: 1000;
+            max-width: 350px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        #orientation-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        #scene-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .success-info { color: #66ff66; }
+        .error-info { color: #ff6666; }
+        .bone-info { color: #ffcc66; }
+        .test-info { color: #66ccff; }
+        .rotation-group {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .rotation-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+        }
+        input[type="range"] {
+            width: 150px;
+        }
+        button {
+            margin: 2px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="debug-info">
+        <div>🧪 Phase 1: Hand Orientation Testing</div>
+    </div>
+    
+    <div id="orientation-controls">
+        <h3>Hand Orientation Controls</h3>
+        
+        <div class="rotation-group">
+            <h4>Left Hand Rotation</h4>
+            <div class="rotation-control">
+                <label>X-axis:</label>
+                <input type="range" id="leftX" min="-6.28" max="6.28" step="0.1" value="0">
+                <span id="leftX-val">0°</span>
+            </div>
+            <div class="rotation-control">
+                <label>Y-axis:</label>
+                <input type="range" id="leftY" min="-6.28" max="6.28" step="0.1" value="3.14">
+                <span id="leftY-val">180°</span>
+            </div>
+            <div class="rotation-control">
+                <label>Z-axis:</label>
+                <input type="range" id="leftZ" min="-6.28" max="6.28" step="0.1" value="0">
+                <span id="leftZ-val">0°</span>
+            </div>
+        </div>
+        
+        <div class="rotation-group">
+            <h4>Right Hand Rotation</h4>
+            <div class="rotation-control">
+                <label>X-axis:</label>
+                <input type="range" id="rightX" min="-6.28" max="6.28" step="0.1" value="0">
+                <span id="rightX-val">0°</span>
+            </div>
+            <div class="rotation-control">
+                <label>Y-axis:</label>
+                <input type="range" id="rightY" min="-6.28" max="6.28" step="0.1" value="0">
+                <span id="rightY-val">0°</span>
+            </div>
+            <div class="rotation-control">
+                <label>Z-axis:</label>
+                <input type="range" id="rightZ" min="-6.28" max="6.28" step="0.1" value="0">
+                <span id="rightZ-val">0°</span>
+            </div>
+        </div>
+        
+        <div>
+            <h4>Preset Orientations</h4>
+            <button onclick="testOrientation1()">Test 1: X=-90°</button>
+            <button onclick="testOrientation2()">Test 2: X=-90°, Y=180°</button>
+            <button onclick="testOrientation3()">Test 3: Z=90°</button>
+            <button onclick="resetOrientation()">Reset Current</button>
+            <button onclick="exportCurrentRotations()">Export Values</button>
+        </div>
+    </div>
+    
+    <div id="scene-container">
+        <canvas id="three-canvas"></canvas>
+    </div>
+
+    <!-- Three.js Scripts -->
+    <script src="vendor/threejs/three.min.js"></script>
+    <script src="vendor/threejs/OrbitControls.js"></script>
+    <script src="vendor/threejs/GLTFLoader.js"></script>
+
+    <script>
+        let debugInfo = document.getElementById('debug-info');
+        
+        function logDebug(message, type = 'normal') {
+            console.log(message);
+            const className = type === 'error' ? 'error-info' : 
+                           type === 'success' ? 'success-info' : 
+                           type === 'bone' ? 'bone-info' :
+                           type === 'test' ? 'test-info' : '';
+            debugInfo.innerHTML += `<div class="${className}">${message}</div>`;
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+        }
+
+        class OrientationTestApp {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.leftHand = null;
+                this.rightHand = null;
+                
+                this.canvas = document.getElementById('three-canvas');
+                this.sceneContainer = document.getElementById('scene-container');
+                
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    logDebug('🧪 Initializing Hand Orientation Test...', 'success');
+                    this.setupScene();
+                    this.setupCamera();
+                    this.setupRenderer();
+                    this.setupLighting();
+                    
+                    await this.loadHandModels();
+                    this.setupControls();
+                    
+                    this.animate();
+                    logDebug('✅ Orientation test initialized - ready for experiments!', 'success');
+                } catch (error) {
+                    logDebug('❌ Error: ' + error.message, 'error');
+                }
+            }
+            
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0xf8f8f8);
+                
+                // Add coordinate axes for reference
+                const axesHelper = new THREE.AxesHelper(2);
+                this.scene.add(axesHelper);
+                
+                // Add a ground plane for reference
+                const groundGeometry = new THREE.PlaneGeometry(10, 10);
+                const groundMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xe8e8e8, 
+                    transparent: true, 
+                    opacity: 0.3 
+                });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -1;
+                this.scene.add(ground);
+                
+                logDebug('🎬 Scene setup with coordinate axes and ground plane', 'bone');
+            }
+            
+            setupCamera() {
+                const aspect = this.sceneContainer.clientWidth / this.sceneContainer.clientHeight;
+                this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+                // Position camera to look at hands from the front
+                this.camera.position.set(0, 0.5, 3);
+                this.camera.lookAt(0, 0, 0);
+                logDebug('📷 Camera positioned for orientation testing', 'bone');
+            }
+            
+            setupRenderer() {
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true
+                });
+                
+                this.renderer.setSize(
+                    this.sceneContainer.clientWidth,
+                    this.sceneContainer.clientHeight
+                );
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+            }
+            
+            setupLighting() {
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+                directionalLight.position.set(2, 3, 2);
+                directionalLight.castShadow = true;
+                this.scene.add(directionalLight);
+            }
+            
+            async loadHandModels() {
+                return new Promise((resolve, reject) => {
+                    const loader = new THREE.GLTFLoader();
+                    let loadedCount = 0;
+                    
+                    // Load left hand
+                    loader.load('assets/models/hand_left.gltf', (gltf) => {
+                        this.leftHand = this.setupHandModel(gltf, 'left');
+                        this.scene.add(this.leftHand);
+                        loadedCount++;
+                        if (loadedCount === 2) resolve();
+                        logDebug('👈 Left hand loaded - ready for orientation testing', 'success');
+                    }, undefined, (error) => {
+                        logDebug('❌ Failed to load left hand: ' + error.message, 'error');
+                        reject(error);
+                    });
+                    
+                    // Load right hand
+                    loader.load('assets/models/hand_right.gltf', (gltf) => {
+                        this.rightHand = this.setupHandModel(gltf, 'right');
+                        this.scene.add(this.rightHand);
+                        loadedCount++;
+                        if (loadedCount === 2) resolve();
+                        logDebug('👉 Right hand loaded - ready for orientation testing', 'success');
+                    }, undefined, (error) => {
+                        logDebug('❌ Failed to load right hand: ' + error.message, 'error');
+                        reject(error);
+                    });
+                });
+            }
+            
+            setupHandModel(gltf, side) {
+                const model = gltf.scene;
+                
+                // Initial positioning
+                if (side === 'left') {
+                    model.position.set(-0.8, 0, 0);
+                    // START WITH CURRENT VALUES FROM FINAL_HANDS.HTML
+                    model.rotation.x = 0;
+                    model.rotation.y = Math.PI;     // 180 degrees
+                    model.rotation.z = 0;
+                    model.scale.set(0.6, 0.6, 0.6);
+                } else {
+                    model.position.set(0.8, 0, 0);
+                    // START WITH CURRENT VALUES FROM FINAL_HANDS.HTML
+                    model.rotation.x = 0;
+                    model.rotation.y = 0;           // 0 degrees
+                    model.rotation.z = 0;
+                    model.scale.set(0.6, 0.6, 0.6);
+                }
+                
+                // Store reference to the model for rotation updates
+                model.userData.side = side;
+                
+                logDebug(`🎯 ${side} hand setup with initial rotations`, 'bone');
+                
+                return model;
+            }
+            
+            setupControls() {
+                // Setup rotation control sliders
+                const controls = ['leftX', 'leftY', 'leftZ', 'rightX', 'rightY', 'rightZ'];
+                
+                controls.forEach(controlId => {
+                    const slider = document.getElementById(controlId);
+                    const valueDisplay = document.getElementById(controlId + '-val');
+                    
+                    // Set initial values
+                    if (controlId === 'leftY') {
+                        slider.value = Math.PI;
+                        valueDisplay.textContent = '180°';
+                    } else {
+                        slider.value = 0;
+                        valueDisplay.textContent = '0°';
+                    }
+                    
+                    slider.addEventListener('input', (e) => {
+                        const value = parseFloat(e.target.value);
+                        const degrees = Math.round(value * 180 / Math.PI);
+                        valueDisplay.textContent = degrees + '°';
+                        
+                        this.updateHandRotation(controlId, value);
+                    });
+                });
+                
+                logDebug('🎮 Rotation controls setup complete', 'success');
+            }
+            
+            updateHandRotation(controlId, value) {
+                const [hand, axis] = controlId.split(/(?=[XYZ])/);
+                const handModel = hand === 'left' ? this.leftHand : this.rightHand;
+                
+                if (!handModel) return;
+                
+                // Update the specific rotation axis
+                handModel.rotation[axis.toLowerCase()] = value;
+                
+                logDebug(`🔄 ${hand} hand ${axis}-axis rotation: ${Math.round(value * 180 / Math.PI)}°`, 'test');
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.renderer.render(this.scene, this.camera);
+            }
+            
+            getCurrentRotations() {
+                const rotations = {};
+                if (this.leftHand) {
+                    rotations.left = {
+                        x: this.leftHand.rotation.x,
+                        y: this.leftHand.rotation.y,
+                        z: this.leftHand.rotation.z
+                    };
+                }
+                if (this.rightHand) {
+                    rotations.right = {
+                        x: this.rightHand.rotation.x,
+                        y: this.rightHand.rotation.y,
+                        z: this.rightHand.rotation.z
+                    };
+                }
+                return rotations;
+            }
+        }
+
+        // Test orientation functions
+        function testOrientation1() {
+            // Test X-axis rotation -90 degrees (fingers from forward to up)
+            logDebug('\\n🧪 === TESTING ORIENTATION 1: X=-90° ===', 'test');
+            
+            if (window.testApp) {
+                // Set X-axis to -90 degrees for both hands
+                const leftXSlider = document.getElementById('leftX');
+                const rightXSlider = document.getElementById('rightX');
+                
+                leftXSlider.value = -Math.PI/2;
+                rightXSlider.value = -Math.PI/2;
+                
+                // Trigger the rotation update
+                leftXSlider.dispatchEvent(new Event('input'));
+                rightXSlider.dispatchEvent(new Event('input'));
+                
+                logDebug('Applied X=-90° to both hands', 'test');
+            }
+        }
+        
+        function testOrientation2() {
+            // Test X=-90 combined with current Y rotations
+            logDebug('\\n🧪 === TESTING ORIENTATION 2: X=-90°, Y=current ===', 'test');
+            
+            if (window.testApp) {
+                const leftXSlider = document.getElementById('leftX');
+                const rightXSlider = document.getElementById('rightX');
+                const leftYSlider = document.getElementById('leftY');
+                const rightYSlider = document.getElementById('rightY');
+                
+                leftXSlider.value = -Math.PI/2;
+                rightXSlider.value = -Math.PI/2;
+                leftYSlider.value = Math.PI;    // Keep 180° for left hand
+                rightYSlider.value = 0;         // Keep 0° for right hand
+                
+                // Trigger updates
+                [leftXSlider, rightXSlider, leftYSlider, rightYSlider].forEach(slider => {
+                    slider.dispatchEvent(new Event('input'));
+                });
+                
+                logDebug('Applied X=-90° with Y rotations maintained', 'test');
+            }
+        }
+        
+        function testOrientation3() {
+            // Test Z-axis rotation
+            logDebug('\\n🧪 === TESTING ORIENTATION 3: Z=90° ===', 'test');
+            
+            if (window.testApp) {
+                const leftZSlider = document.getElementById('leftZ');
+                const rightZSlider = document.getElementById('rightZ');
+                
+                leftZSlider.value = Math.PI/2;
+                rightZSlider.value = -Math.PI/2;  // Opposite for right hand
+                
+                leftZSlider.dispatchEvent(new Event('input'));
+                rightZSlider.dispatchEvent(new Event('input'));
+                
+                logDebug('Applied Z=±90° to hands', 'test');
+            }
+        }
+        
+        function resetOrientation() {
+            // Reset to current final_hands.html values
+            if (window.testApp) {
+                const sliders = ['leftX', 'leftZ', 'rightX', 'rightY', 'rightZ'];
+                sliders.forEach(id => {
+                    const slider = document.getElementById(id);
+                    slider.value = 0;
+                    slider.dispatchEvent(new Event('input'));
+                });
+                
+                // Set leftY back to 180°
+                const leftYSlider = document.getElementById('leftY');
+                leftYSlider.value = Math.PI;
+                leftYSlider.dispatchEvent(new Event('input'));
+                
+                logDebug('🔄 Reset to current final_hands.html rotations', 'test');
+            }
+        }
+        
+        function exportCurrentRotations() {
+            if (window.testApp) {
+                const rotations = window.testApp.getCurrentRotations();
+                const exportData = {
+                    left: {
+                        x: rotations.left.x,
+                        y: rotations.left.y,
+                        z: rotations.left.z,
+                        xDegrees: Math.round(rotations.left.x * 180 / Math.PI),
+                        yDegrees: Math.round(rotations.left.y * 180 / Math.PI),
+                        zDegrees: Math.round(rotations.left.z * 180 / Math.PI)
+                    },
+                    right: {
+                        x: rotations.right.x,
+                        y: rotations.right.y,
+                        z: rotations.right.z,
+                        xDegrees: Math.round(rotations.right.x * 180 / Math.PI),
+                        yDegrees: Math.round(rotations.right.y * 180 / Math.PI),
+                        zDegrees: Math.round(rotations.right.z * 180 / Math.PI)
+                    }
+                };
+                
+                logDebug('\\n📤 EXPORT CURRENT ROTATIONS:', 'success');
+                logDebug('Left Hand: X=' + exportData.left.xDegrees + '° Y=' + exportData.left.yDegrees + '° Z=' + exportData.left.zDegrees + '°', 'success');
+                logDebug('Right Hand: X=' + exportData.right.xDegrees + '° Y=' + exportData.right.yDegrees + '° Z=' + exportData.right.zDegrees + '°', 'success');
+                logDebug('\\nCode format:', 'success');
+                logDebug('Left: rotation.set(' + exportData.left.x.toFixed(2) + ', ' + exportData.left.y.toFixed(2) + ', ' + exportData.left.z.toFixed(2) + ')', 'success');
+                logDebug('Right: rotation.set(' + exportData.right.x.toFixed(2) + ', ' + exportData.right.y.toFixed(2) + ', ' + exportData.right.z.toFixed(2) + ')', 'success');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof THREE !== 'undefined') {
+                window.testApp = new OrientationTestApp();
+            } else {
+                logDebug('❌ THREE.js not loaded', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
