@@ -57,11 +57,11 @@ class HandAdapter {
         if (cue === 'highlight') {
             this._setOverlay(hand, true);
         } else if (cue === 'carry') {
-            this._setCarryBorrow('Carry 1 ten');
-            this._announce('Carry 1 ten to the left hand');
+            this._setCarryBorrow(window.i18n.t('carry.text'));
+            this._announce(window.i18n.t('carry.announce'));
         } else if (cue === 'borrow') {
-            this._setCarryBorrow('Borrow 1 ten');
-            this._announce('Borrow 1 ten from the left hand');
+            this._setCarryBorrow(window.i18n.t('borrow.text'));
+            this._announce(window.i18n.t('borrow.announce'));
         }
     }
 

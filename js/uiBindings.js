@@ -159,12 +159,12 @@ class UiBindings {
         this.btnNext.addEventListener('click', async () => {
             this.soundSynth.playClick();
             await this.o.next();
-            this._setStepStatus('Advanced to next step');
+            this._setStepStatus(window.i18n.t('stepStatus.advanced'));
         });
         this.btnPrev.addEventListener('click', async () => {
             this.soundSynth.playClick();
             await this.o.prev();
-            this._setStepStatus('Restored previous step');
+            this._setStepStatus(window.i18n.t('stepStatus.restored'));
         });
         this.btnNew.addEventListener('click', async () => {
             this.soundSynth.playClick();
@@ -202,11 +202,11 @@ class UiBindings {
                 if (muted) {
                     soundOnSvg.style.display = 'block';
                     soundOffSvg.style.display = 'none';
-                    this._announce('Sounds unmuted');
+                    this._announce(window.i18n.t('announce.soundsUnmuted'));
                 } else {
                     soundOnSvg.style.display = 'none';
                     soundOffSvg.style.display = 'block';
-                    this._announce('Sounds muted');
+                    this._announce(window.i18n.t('announce.soundsMuted'));
                 }
             }
             // Play a soft confirmation click if just unmuted
@@ -231,9 +231,9 @@ class UiBindings {
         // Tour wiring
         this._tourIdx = -1;
         const tourSteps = () => ([
-            { sel: '#scene-container', title: '3D Scene', text: 'Watch both hands animate. Highlights guide your focus.' },
-            { sel: '#panelSteps', title: 'Steps Panel', text: 'Follow concise steps. Back restores, Next advances.' },
-            { sel: '#panelControls', title: 'Controls', text: 'Auto ▶ plays steps; New creates a bounded problem.' }
+            { sel: '#scene-container', title: window.i18n.t('tour.step1Title'), text: window.i18n.t('tour.step1Text') },
+            { sel: '#panelSteps', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
+            { sel: '#panelControls', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') }
         ]);
         const positionTour = () => {
             if (this._tourIdx < 0) return;
@@ -249,7 +249,7 @@ class UiBindings {
             Object.assign(this.tour.pop.style, { left: popX + 'px', top: popY + 'px' });
             this.tour.title.textContent = step.title;
             this.tour.text.textContent = step.text;
-            this.tour.next.textContent = (this._tourIdx >= tourSteps().length - 1) ? 'Done' : 'Next';
+            this.tour.next.textContent = (this._tourIdx >= tourSteps().length - 1) ? window.i18n.t('tour.done') : window.i18n.t('tour.next');
         };
         const nextTour = () => {
             this.soundSynth.playClick();
@@ -313,7 +313,7 @@ class UiBindings {
                 const currentTotal = state.total;
                 const feedbackEl = document.getElementById('challengeProgressFeedback');
                 if (feedbackEl) {
-                    feedbackEl.textContent = `Your Hands: ${currentTotal}`;
+                    feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: currentTotal});
                 }
                 
                 // Automatic success check
@@ -351,7 +351,7 @@ class UiBindings {
 
         // Update UI
         document.getElementById('challengePrompt').textContent = problem.prompt;
-        document.getElementById('challengeProgressFeedback').textContent = `Your Hands: 0`;
+        document.getElementById('challengeProgressFeedback').textContent = window.i18n.t('challenge.yourHands', {value: 0});
 
         const msgEl = document.getElementById('challengeMessage');
         if (msgEl) {
@@ -386,7 +386,7 @@ class UiBindings {
             }
         }, 1000);
 
-        this._announce(`New challenge question: ${problem.prompt}. You have 15 seconds.`);
+        this._announce(window.i18n.t('challenge.newQuestion', {prompt: problem.prompt}));
     }
 
     _onChallengeSuccess() {
@@ -401,13 +401,13 @@ class UiBindings {
         // Award stars
         if (this.challenge.streak > 0 && this.challenge.streak % 3 === 0) {
             this.challenge.stars++;
-            this._announce(`Awesome! 3 correct in a row! Awarded a star!`);
+            this._announce(window.i18n.t('announce.streak'));
         }
 
         const msgEl = document.getElementById('challengeMessage');
         if (msgEl) {
             msgEl.className = 'challenge-msg success';
-            msgEl.textContent = `🎉 Correct! +10 points!`;
+            msgEl.textContent = window.i18n.t('challenge.correct');
         }
 
         this._updateChallengeStatsUI();
@@ -439,7 +439,7 @@ class UiBindings {
         const msgEl = document.getElementById('challengeMessage');
         if (msgEl) {
             msgEl.className = 'challenge-msg error';
-            msgEl.textContent = `⏳ Time's Up! Showing correct configuration.`;
+            msgEl.textContent = window.i18n.t('challenge.timeUp');
         }
 
         // Show correct fingers on hands
@@ -452,7 +452,7 @@ class UiBindings {
         document.getElementById('btnChallengeSubmit').hidden = true;
         document.getElementById('btnChallengeNext').hidden = false;
 
-        this._announce(`Time's up. The correct answer was ${targetVal}. Press Next Challenge to continue.`);
+        this._announce(window.i18n.t('challenge.timeUpAnnounce', {value: targetVal}));
     }
 
     _onSubmitAnswer() {
@@ -470,9 +470,9 @@ class UiBindings {
             const msgEl = document.getElementById('challengeMessage');
             if (msgEl) {
                 msgEl.className = 'challenge-msg error';
-                msgEl.textContent = `❌ Try again! Current hand value is ${currentTotal}`;
+                msgEl.textContent = window.i18n.t('challenge.tryAgain', {value: currentTotal});
             }
-            this._announce(`Incorrect. Current hand value is ${currentTotal}. Try again.`);
+            this._announce(window.i18n.t('challenge.incorrect', {value: currentTotal}));
         }
     }
 
@@ -490,10 +490,10 @@ class UiBindings {
     }
 
     _updateChallengeStatsUI() {
-        document.getElementById('challengeStreak').textContent = `🔥 Streak: ${this.challenge.streak}`;
+        document.getElementById('challengeStreak').textContent = window.i18n.t('challenge.streak', {streak: this.challenge.streak});
         document.getElementById('challengeStars').textContent = `⭐ ${this.challenge.stars}`;
         
-        this._announce(`Score: ${this.challenge.score}, Streak: ${this.challenge.streak}, Stars: ${this.challenge.stars}`);
+        this._announce(window.i18n.t('challenge.scoreAnnounce', {score: this.challenge.score, streak: this.challenge.streak, stars: this.challenge.stars}));
     }
 
     _generateChallengeProblem(level) {
@@ -502,16 +502,16 @@ class UiBindings {
             if (Math.random() < 0.5) {
                 // Ones only (0-9)
                 const val = Math.floor(Math.random() * 10);
-                return { prompt: `Show ${val} on your hands`, target: val };
+                return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
             } else {
                 // Tens only (10, 20, ..., 90)
                 const val = (Math.floor(Math.random() * 9) + 1) * 10;
-                return { prompt: `Show ${val} on your hands`, target: val };
+                return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
             }
         } else if (level === 2) {
             // Level 2: Combined with no carry/borrow
             const val = Math.floor(Math.random() * 90) + 10; // 10 to 99
-            return { prompt: `Show ${val} on your hands`, target: val };
+            return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
         } else {
             // Level 3: Carry/Borrow Required
             const op = Math.random() < 0.5 ? '+' : '-';
@@ -524,10 +524,10 @@ class UiBindings {
                     b = Math.floor(Math.random() * (maxB - 4)) + 5;
                     const aR = a % 10, bR = b % 10;
                     if ((aR + bR) >= 10) {
-                        return { prompt: `Show the answer to: ${a} + ${b}`, target: a + b };
+                        return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '+', b}), target: a + b };
                     }
                 }
-                return { prompt: `Show the answer to: 47 + 38`, target: 85 };
+                return { prompt: window.i18n.t('challenge.promptFallbackAdd'), target: 85 };
             } else {
                 let a, b;
                 for (let i = 0; i < 200; i++) {
@@ -535,10 +535,10 @@ class UiBindings {
                     b = Math.floor(Math.random() * (a - 9)) + 10;
                     const aR = a % 10, bR = b % 10;
                     if (aR < bR) {
-                        return { prompt: `Show the answer to: ${a} − ${b}`, target: a - b };
+                        return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '−', b}), target: a - b };
                     }
                 }
-                return { prompt: `Show the answer to: 42 − 17`, target: 25 };
+                return { prompt: window.i18n.t('challenge.promptFallbackSub'), target: 25 };
             }
         }
     }
@@ -636,7 +636,7 @@ class UiBindings {
         this.o.setAuto(next);
         this.btnAuto.setAttribute('aria-pressed', String(next));
         this.autoStatus.hidden = !next;
-        this.autoStatus.textContent = `Auto: ${next ? 'On' : 'Off'}`;
+        this.autoStatus.textContent = next ? window.i18n.t('auto.on') : window.i18n.t('auto.off');
         if (this.speedGroup) this.speedGroup.hidden = !next;
         if (this.btnNarrate) {
             this.btnNarrate.hidden = !next;
@@ -692,12 +692,12 @@ class UiBindings {
         if (panelControls) panelControls.hidden = (s.mode === 'Challenge' || s.mode === 'Help');
 
         if (s.mode === 'Tutorial') {
-            panelHeading.textContent = 'Tutorial';
-            panelQuestion.textContent = `▷ ${s.problem.a} = ?`;
-            panelExplanation.textContent = 'Left = tens · Right = ones · Thumb = 5';
+            panelHeading.textContent = window.i18n.t('tab.tutorial');
+            panelQuestion.textContent = window.i18n.t('panel.question', {a: s.problem.a});
+            panelExplanation.textContent = window.i18n.t('panel.explanation');
         } else if (s.mode === 'Arithmetic') {
-            panelHeading.textContent = 'Arithmetic';
-            panelQuestion.textContent = 'Add or subtract with carries/borrows';
+            panelHeading.textContent = window.i18n.t('tab.arithmetic');
+            panelQuestion.textContent = window.i18n.t('panel.arithmeticTitle');
             document.getElementById('operandA').textContent = String(s.problem.a);
             document.getElementById('operator').textContent = s.problem.op;
             document.getElementById('operandB').textContent = String(s.problem.b);
@@ -710,24 +710,24 @@ class UiBindings {
             const subInvalid = s.problem.op === '-' && s.problem.a < s.problem.b;
             const addOverflow = s.problem.op === '+' && sum > 99;
             if (subInvalid) {
-                panelExplanation.textContent = 'A must be ≥ B for subtraction. Tip: swap numbers or use addition.';
+                panelExplanation.textContent = window.i18n.t('panel.subInvalid');
             } else if (addOverflow) {
-                panelExplanation.textContent = 'Result exceeds 99. Choose smaller numbers or try subtraction.';
+                panelExplanation.textContent = window.i18n.t('panel.addOverflow');
             } else {
-                panelExplanation.textContent = 'Left = tens · Right = ones · Thumb = 5';
+                panelExplanation.textContent = window.i18n.t('panel.explanation');
             }
         } else if (s.mode === 'Challenge') {
-            panelHeading.textContent = 'Challenge';
-            panelQuestion.textContent = 'Test your counting speed';
-            panelExplanation.textContent = 'Use the 3D hands directly to input numbers!';
+            panelHeading.textContent = window.i18n.t('tab.challenge');
+            panelQuestion.textContent = window.i18n.t('panel.challengeTitle');
+            panelExplanation.textContent = window.i18n.t('panel.challengeExplanation');
         } else {
-            panelHeading.textContent = 'Help';
-            panelQuestion.textContent = 'Use tabs to switch modes. Enter advances steps.';
-            panelExplanation.textContent = 'A: Auto, R: Reset, ? : Help.';
+            panelHeading.textContent = window.i18n.t('tab.help');
+            panelQuestion.textContent = window.i18n.t('panel.helpQuestion');
+            panelExplanation.textContent = window.i18n.t('panel.helpExplanation');
             
             // Contextual help content for Tutorial vs Arithmetic
             if (helpContent) {
-                const tourBtn = '<div class="hm-help-block" style="display:flex; justify-content:flex-end;"><button id="btnStartTour" class="hm-btn hm-btn-primary">Start Tour</button></div>';
+                const tourBtn = `<div class="hm-help-block" style="display:flex; justify-content:flex-end;"><button id="btnStartTour" class="hm-btn hm-btn-primary">${window.i18n.t('help.startTour')}</button></div>`;
                 helpContent.innerHTML = tourBtn;
                 helpContent.querySelector('#btnStartTour')?.addEventListener('click', () => { this._startTour(); });
             }
@@ -765,6 +765,10 @@ class UiBindings {
                 }
                 panelSteps.appendChild(li);
             });
+            const currentStepEl = panelSteps.querySelector('.is-current');
+            if (currentStepEl) {
+                currentStepEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
         }
 
         // Step controls
@@ -774,7 +778,7 @@ class UiBindings {
                 (s.problem.op === '+' && (s.problem.a + s.problem.b) > 99)
             );
             this.btnPrev.disabled = s.index === 0 || guardBlocked;
-            this.btnNext.textContent = s.index >= s.steps.length ? 'Restart' : 'Next →';
+            this.btnNext.textContent = s.index >= s.steps.length ? window.i18n.t('btn.restart') : window.i18n.t('btn.next');
             this.btnNext.disabled = guardBlocked;
             if (s.index >= s.steps.length && s.mode === 'Arithmetic') {
                 document.getElementById('answerSlot').textContent = String(s.steps.at(-1)?.target.left ?? '') + String(s.steps.at(-1)?.target.right ?? '');
@@ -804,10 +808,20 @@ class UiBindings {
         if (!text || !text.trim()) return Promise.resolve();
         window.speechSynthesis.cancel();
         let ttsText = text.trim();
-        ttsText = ttsText.replace(/ \- /g, ' minus ');
-        ttsText = ttsText.replace(/ \+ /g, ' plus ');
-        ttsText = ttsText.replace(/ \= /g, ' equals ');
+        const isMs = window.i18n && window.i18n.currentLang === 'ms';
+        if (isMs) {
+            ttsText = ttsText.replace(/\s\u2212\s/g, ' tolak ');
+            ttsText = ttsText.replace(/\s\u002d\s/g, ' tolak ');
+            ttsText = ttsText.replace(/\s\+\s/g, ' tambah ');
+            ttsText = ttsText.replace(/\s\=\s/g, ' sama dengan ');
+        } else {
+            ttsText = ttsText.replace(/\s\u2212\s/g, ' minus ');
+            ttsText = ttsText.replace(/\s\u002d\s/g, ' minus ');
+            ttsText = ttsText.replace(/\s\+\s/g, ' plus ');
+            ttsText = ttsText.replace(/\s\=\s/g, ' equals ');
+        }
         const utterance = new SpeechSynthesisUtterance(ttsText);
+        utterance.lang = isMs ? 'ms-MY' : 'en-US';
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;

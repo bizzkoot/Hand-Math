@@ -68,7 +68,7 @@ class HandMathApp {
             console.log('3D Hand Math App initialized successfully');
         } catch (error) {
             console.error('Failed to initialize app:', error);
-            this.showError('Failed to load 3D scene. Please refresh the page.');
+            this.showError(window.i18n.t('error.loadFailed'));
         }
     }
     
@@ -1302,12 +1302,12 @@ class HandMathApp {
      */
     getStatusText(status) {
         const statusTexts = {
-            'ready': 'Ready',
-            'animating': 'Moving...',
-            'valid': 'Valid',
-            'invalid': 'Invalid'
+            'ready': window.i18n.t('status.ready'),
+            'animating': window.i18n.t('status.animating'),
+            'valid': window.i18n.t('status.valid'),
+            'invalid': window.i18n.t('status.invalid')
         };
-        return statusTexts[status] || 'Unknown';
+        return statusTexts[status] || window.i18n.t('status.unknown');
     }
     
     /**
@@ -1439,7 +1439,7 @@ class HandMathApp {
                 </svg>
                 <p>${message}</p>
                 <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">
-                    Retry
+                    ${window.i18n.t('error.btnRetry')}
                 </button>
             </div>
         `;

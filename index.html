@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-i18n-html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,15 +20,19 @@
     <div id="app" class="hm-app no-scroll">
         <header id="header" class="hm-header" role="banner">
             <div class="hm-header-left">
-                <h1 id="title" class="hm-title">Hand Math — Count to 99</h1>
+                <h1 id="title" class="hm-title" data-i18n="header.title">Hand Math — Count to 99</h1>
                 <div id="modeTabs" class="hm-tabs" role="tablist" aria-label="Modes">
-                    <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial">Tutorial</button>
-                    <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic">Arithmetic</button>
-                    <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge">Challenge</button>
-                    <button id="tabHelp" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelHelp">Help</button>
+                    <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial" data-i18n="tab.tutorial">Tutorial</button>
+                    <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic" data-i18n="tab.arithmetic">Arithmetic</button>
+                    <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge" data-i18n="tab.challenge">Challenge</button>
+                    <button id="tabHelp" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelHelp" data-i18n="tab.help">Help</button>
                 </div>
             </div>
             <div class="hm-header-right">
+                <select id="langSwitcher" class="hm-lang-select" title="Language / Bahasa" data-i18n-title="lang.selectTitle">
+                    <option value="en" data-i18n="lang.en">English</option>
+                    <option value="ms" data-i18n="lang.ms">Bahasa Melayu</option>
+                </select>
                 <div id="hmSkin" class="hm-skin" aria-label="Skin tone picker">
                     <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" aria-label="Skin tone 1"></button>
                     <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" aria-label="Skin tone 2"></button>
@@ -47,8 +51,8 @@
                     <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
                 </button>
                 <button id="btnInfo" class="hm-btn hm-btn-icon" aria-label="Info">i</button>
-                <button id="btnReset" class="hm-btn" aria-keyshortcuts="R">Reset</button>
-                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false">Auto ▶</button>
+                <button id="btnReset" class="hm-btn" aria-keyshortcuts="R" data-i18n="btn.reset">Reset</button>
+                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false" data-i18n="btn.auto">Auto ▶</button>
                 <span id="speedGroup" class="hm-speed-group" hidden>
                     <button id="btnSpeedDown" class="hm-btn hm-btn-icon" aria-label="Slower">−</button>
                     <span id="speedLabel" class="hm-speed-label">1.0×</span>
@@ -66,7 +70,7 @@
                     <div id="loading-overlay" class="loading-overlay">
                         <div class="loader">
                             <div class="loader-spinner"></div>
-                            <p>Loading 3D Scene...</p>
+                            <p data-i18n="loading.text">Loading 3D Scene...</p>
                         </div>
                     </div>
                     <div class="scene-controls">
@@ -84,7 +88,7 @@
                     </div>
                     <!-- Bottom-left attribution overlay -->
                     <div id="assetCredits" class="hm-credits" role="note" aria-label="Model attribution">
-                        Hand model: <a href="https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e" target="_blank" rel="noopener" id="creditTitle">Rigged Hand</a>
+                        <span data-i18n="credit.handModel">Hand model:</span> <a href="https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e" target="_blank" rel="noopener" id="creditTitle">Rigged Hand</a>
                         by <a href="https://sketchfab.com/elenaferfor" target="_blank" rel="noopener" id="creditAuthor">Elena FF</a>
                         on <a href="https://sketchfab.com" target="_blank" rel="noopener">Sketchfab</a> —
                         <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
@@ -97,9 +101,9 @@
             </section>
 
             <aside id="teachingPanel" class="hm-panel" role="region" aria-labelledby="panelHeading">
-                <h2 id="panelHeading" class="hm-panel-heading">Tutorial</h2>
+                <h2 id="panelHeading" class="hm-panel-heading" data-i18n="panel.tutorialHeading">Tutorial</h2>
                 <div id="panelQuestion" class="hm-panel-question" role="heading" aria-level="2">▷ 37 = ?</div>
-                <p id="panelExplanation" class="hm-panel-explanation">Left = tens, Right = ones. Thumb = five.</p>
+                <p id="panelExplanation" class="hm-panel-explanation" data-i18n="panel.explanation">Left = tens, Right = ones. Thumb = five.</p>
                 <ol id="panelSteps" class="hm-steps" role="list" aria-live="polite"></ol>
                 <div id="arithPrompt" class="hm-arith-prompt" hidden>
                     <span id="operandA" class="hm-op">47</span>
@@ -114,21 +118,21 @@
                         <button id="btnSub" class="hm-btn hm-btn-tab">−</button>
                     </div>
                     <div class="hm-mode-filter" aria-label="Practice options" hidden>
-                        <span class="hm-label">Practice:</span>
+                        <span class="hm-label" data-i18n="practice.label">Practice:</span>
                         <button id="mfAdd" class="hm-btn hm-btn-tab">+</button>
                         <button id="mfSub" class="hm-btn hm-btn-tab">−</button>
                         <button id="mfBoth" class="hm-btn hm-btn-tab is-active">±</button>
                         <select id="levelSel" class="hm-level" aria-label="Level">
-                            <option value="1">Level 1 (no carry/borrow)</option>
-                            <option value="2" selected>Level 2 (mixed)</option>
-                            <option value="3">Level 3 (hard)</option>
+                            <option value="1" data-i18n="level.1">Level 1 (no carry/borrow)</option>
+                            <option value="2" selected data-i18n="level.2">Level 2 (mixed)</option>
+                            <option value="3" data-i18n="level.3">Level 3 (hard)</option>
                         </select>
                     </div>
                     <div class="hm-step-controls">
-                        <button id="btnPrev" class="hm-btn" disabled title="Back: restore previous finger state" aria-label="Back (restore previous finger state)">← Back</button>
-                        <button id="btnNext" class="hm-btn hm-btn-primary" title="Next: run current step" aria-label="Next (run current step)">Next →</button>
-                        <button id="btnNew" class="hm-btn" hidden>New Problem</button>
-                        <span id="autoStatus" class="hm-auto" hidden>Auto: Off</span>
+                        <button id="btnPrev" class="hm-btn" disabled title="Back: restore previous finger state" aria-label="Back (restore previous finger state)" data-i18n="btn.prev">← Back</button>
+                        <button id="btnNext" class="hm-btn hm-btn-primary" title="Next: run current step" aria-label="Next (run current step)" data-i18n="btn.next">Next →</button>
+                        <button id="btnNew" class="hm-btn" hidden data-i18n="btn.newProblem">New Problem</button>
+                        <span id="autoStatus" class="hm-auto" hidden data-i18n="auto.off">Auto: Off</span>
                     </div>
                     <div id="stepStatus" class="hm-step-status" aria-live="polite"></div>
                 </div>
@@ -138,36 +142,36 @@
                 <!-- Challenge Content -->
                 <div id="challengeContent" class="hm-challenge" hidden>
                     <div id="challengeStartScreen" class="challenge-screen">
-                        <h3 class="challenge-title">Math Challenge Mode</h3>
-                        <p class="challenge-desc">Test your hand math skills! Show the requested number on the hands or solve the arithmetic problem before the timer runs out.</p>
+                        <h3 class="challenge-title" data-i18n="challenge.title">Math Challenge Mode</h3>
+                        <p class="challenge-desc" data-i18n="challenge.desc">Test your hand math skills! Show the requested number on the hands or solve the arithmetic problem before the timer runs out.</p>
                         <div class="challenge-options">
-                            <label for="challengeDiff">Difficulty:</label>
+                            <label for="challengeDiff" data-i18n="challenge.difficulty">Difficulty:</label>
                             <select id="challengeDiff" class="hm-level">
-                                <option value="1">Level 1 (Single Hand)</option>
-                                <option value="2" selected>Level 2 (No Carry/Borrow)</option>
-                                <option value="3">Level 3 (Carry/Borrow)</option>
+                                <option value="1" data-i18n="challenge.level1">Level 1 (Single Hand)</option>
+                                <option value="2" selected data-i18n="challenge.level2">Level 2 (No Carry/Borrow)</option>
+                                <option value="3" data-i18n="challenge.level3">Level 3 (Carry/Borrow)</option>
                             </select>
                         </div>
-                        <button id="btnChallengeStart" class="hm-btn hm-btn-primary" style="margin-top: 15px; width: 100%;">Start Challenge</button>
+                        <button id="btnChallengeStart" class="hm-btn hm-btn-primary" style="margin-top: 15px; width: 100%;" data-i18n="challenge.startBtn">Start Challenge</button>
                     </div>
                     <div id="challengePlayScreen" class="challenge-screen" hidden>
                         <div class="challenge-header-row">
-                            <span id="challengeTimer" class="challenge-timer">⏳ 15s</span>
-                            <span id="challengeStreak" class="challenge-streak">🔥 Streak: 0</span>
+                            <span id="challengeTimer" class="challenge-timer"></span>
+                            <span id="challengeStreak" class="challenge-streak"></span>
                             <span id="challengeStars" class="challenge-stars">⭐ 0</span>
                         </div>
                         
                         <div class="challenge-card">
-                            <div id="challengePrompt" class="challenge-prompt">Show 42</div>
-                            <div id="challengeProgressFeedback" class="challenge-feedback">Your Hands: 0</div>
+                            <div id="challengePrompt" class="challenge-prompt"></div>
+                            <div id="challengeProgressFeedback" class="challenge-feedback"></div>
                         </div>
                         
                         <div id="challengeMessage" class="challenge-msg"></div>
                         
                         <div class="challenge-actions">
-                            <button id="btnChallengeSubmit" class="hm-btn hm-btn-primary" style="flex: 1;">Submit Answer</button>
-                            <button id="btnChallengeNext" class="hm-btn" style="flex: 1;" hidden>Next Challenge</button>
-                            <button id="btnChallengeExit" class="hm-btn hm-btn-danger">Exit</button>
+                            <button id="btnChallengeSubmit" class="hm-btn hm-btn-primary" style="flex: 1;" data-i18n="challenge.submitBtn">Submit Answer</button>
+                            <button id="btnChallengeNext" class="hm-btn" style="flex: 1;" hidden data-i18n="challenge.nextBtn">Next Challenge</button>
+                            <button id="btnChallengeExit" class="hm-btn hm-btn-danger" data-i18n="challenge.exitBtn">Exit</button>
                         </div>
                     </div>
                 </div>
@@ -177,16 +181,16 @@
         <div id="infoModal" class="hm-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
             <div class="hm-modal-card">
                 <div class="hm-modal-head">
-                    <h3 id="infoTitle">How to read Hand Math</h3>
+                    <h3 id="infoTitle" data-i18n="modal.infoTitle">How to read Hand Math</h3>
                     <button id="infoClose" class="hm-btn hm-btn-icon" aria-label="Close">✕</button>
                 </div>
                 <div class="hm-modal-body">
-                    <p>Thumb counts as five. Left hand = tens (0–90). Right hand = ones (0–9).</p>
-                    <p>Addition: for ones overflow, think “+10” mentally, remove the complement on the right, then add tens including carry.</p>
-                    <p>Subtraction: borrow 10 from the left if ones are smaller; a cue will appear.</p>
+                    <p data-i18n="modal.infoBody1">Thumb counts as five. Left hand = tens (0–90). Right hand = ones (0–9).</p>
+                    <p data-i18n="modal.infoBody2">Addition: for ones overflow, think “+10” mentally, remove the complement on the right, then add tens including carry.</p>
+                    <p data-i18n="modal.infoBody3">Subtraction: borrow 10 from the left if ones are smaller; a cue will appear.</p>
                 </div>
                 <div class="hm-modal-foot">
-                    <button id="infoGotIt" class="hm-btn hm-btn-primary">Got it</button>
+                    <button id="infoGotIt" class="hm-btn hm-btn-primary" data-i18n="modal.gotIt">Got it</button>
                 </div>
             </div>
         </div>
@@ -198,9 +202,9 @@
                 <div class="hm-tour-title" id="tourTitle">Title</div>
                 <div class="hm-tour-text" id="tourText">Body</div>
                 <div class="hm-tour-actions">
-                    <button id="tourBack" class="hm-btn">Back</button>
-                    <button id="tourSkip" class="hm-btn">Skip</button>
-                    <button id="tourNext" class="hm-btn hm-btn-primary">Next</button>
+                    <button id="tourBack" class="hm-btn" data-i18n="tour.back">Back</button>
+                    <button id="tourSkip" class="hm-btn" data-i18n="tour.skip">Skip</button>
+                    <button id="tourNext" class="hm-btn hm-btn-primary" data-i18n="tour.next">Next</button>
                 </div>
             </div>
         </div>
@@ -218,6 +222,7 @@
     <script src="js/handMathCalculator.js"></script>
     <script src="js/skinToneService.js"></script>
     <script>window.HANDMATH_STRICT_GLTF = true;</script>
+    <script src="js/i18n.js"></script>
     <script src="js/main.js"></script>
     <script src="js/handAdapter.js"></script>
     <script src="js/stepEngine.js"></script>
@@ -226,7 +231,22 @@
     <script src="js/uiBindings.js"></script>
     <script src="js/testApi.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize i18n
+            await window.i18n.init();
+
+            // Wire language switcher
+            const langSwitcher = document.getElementById('langSwitcher');
+            if (langSwitcher) {
+                langSwitcher.value = window.i18n.currentLang;
+                langSwitcher.addEventListener('change', () => {
+                    window.i18n.setLang(langSwitcher.value);
+                });
+                window.i18n.onChange(() => {
+                    langSwitcher.value = window.i18n.currentLang;
+                });
+            }
+
             const start = () => {
                 if (!window.handMathApp || !window.handMathApp.handController) {
                     return setTimeout(start, 100);
