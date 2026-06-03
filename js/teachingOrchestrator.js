@@ -5,9 +5,13 @@ class TeachingOrchestrator {
         this.mode = 'Tutorial'; // 'Tutorial' | 'Arithmetic' | 'Help'
         this.steps = [];
         this.index = 0;
-        this.problem = { a: 37, b: 25, op: '+' };
+        this.problem = { a: TeachingOrchestrator._randomNonZero(), b: 25, op: '+' };
         this.listeners = new Set();
         this._buildInitial();
+    }
+
+    static _randomNonZero() {
+        return Math.floor(Math.random() * 99) + 1;
     }
 
     onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
@@ -40,7 +44,12 @@ class TeachingOrchestrator {
     setTutorialNumber(n) { this.problem = { a: n, b: 0, op: '+' }; this._rebuildTutorial(); this._emit(); }
 
     async next() {
-        if (this.index >= this.steps.length) return;
+        if (this.index >= this.steps.length) {
+            if (this.mode === 'Tutorial') {
+                this.setTutorialNumber(TeachingOrchestrator._randomNonZero());
+            }
+            return;
+        }
         const current = this.steps[this.index];
         await this.engine.runStep(current);
         this.index = Math.min(this.index + 1, this.steps.length);

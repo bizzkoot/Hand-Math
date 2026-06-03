@@ -73,6 +73,11 @@ self.addEventListener('activate', (event) => {
     );
 });
 
+// Helper: dev mode (localhost) — bypass cache for fresh assets
+function isDevMode() {
+    return self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+}
+
 // Helper: is HTML request?
 function isHtmlRequest(request) {
     return request.destination === 'document' || 
@@ -125,16 +130,26 @@ self.addEventListener('fetch', (event) => {
                 })
         );
     } else if (isStaticAsset(request)) {
-        // Cache-first for static assets
-        event.respondWith(
-            caches.match(request).then((cached) => {
-                return cached || fetch(request).then((response) => {
+        // Network-first on localhost (fresh dev changes), cache-first in production
+        if (isDevMode()) {
+            event.respondWith(
+                fetch(request).then((response) => {
                     const clone = response.clone();
                     caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
                     return response;
-                });
-            })
-        );
+                }).catch(() => caches.match(request))
+            );
+        } else {
+            event.respondWith(
+                caches.match(request).then((cached) => {
+                    return cached || fetch(request).then((response) => {
+                        const clone = response.clone();
+                        caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+                        return response;
+                    });
+                })
+            );
+        }
     } else if (isModelAsset(request)) {
         // Cache-first for models/images (large files)
         event.respondWith(

@@ -263,8 +263,26 @@ class UiBindings {
             Object.assign(this.tour.focus.style, {
                 left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px'
             });
-            const popX = Math.min(rect.right + 12, window.innerWidth - 320);
-            const popY = Math.min(rect.top + rect.height + 12, window.innerHeight - 140);
+            const popW = 320;
+            const popH = 140;
+            // Try right of target, then left
+            let popX;
+            if (rect.right + 12 + popW <= window.innerWidth) {
+                popX = rect.right + 12;
+            } else if (rect.left - popW - 12 >= 0) {
+                popX = rect.left - popW - 12;
+            } else {
+                popX = Math.max(8, Math.min(rect.right + 12, window.innerWidth - popW - 8));
+            }
+            // Try below target, then above
+            let popY;
+            if (rect.bottom + 12 + popH <= window.innerHeight) {
+                popY = rect.bottom + 12;
+            } else if (rect.top - popH - 12 >= 0) {
+                popY = rect.top - popH - 12;
+            } else {
+                popY = Math.max(8, Math.min(rect.bottom + 12, window.innerHeight - popH - 8));
+            }
             Object.assign(this.tour.pop.style, { left: popX + 'px', top: popY + 'px' });
             this.tour.title.textContent = step.title;
             this.tour.text.textContent = step.text;
@@ -285,8 +303,33 @@ class UiBindings {
             this.tour.overlay.hidden = false;
             positionTour();
         };
-        this._endTour = () => { this._tourIdx = -1; if (this.tour.overlay) this.tour.overlay.hidden = true; };
-        this._startTour = () => { this._endTour(); this._tourIdx = -1; nextTour(); };
+        this._endTour = () => {
+            this._tourIdx = -1;
+            if (this.tour.overlay) this.tour.overlay.hidden = true;
+            // Restore panel visibility that was temporarily shown for the tour
+            if (this._tourStepsRestore !== undefined) {
+                const el = document.getElementById('panelSteps');
+                if (el) el.hidden = this._tourStepsRestore;
+                this._tourStepsRestore = undefined;
+            }
+            if (this._tourControlsRestore !== undefined) {
+                const el = document.getElementById('panelControls');
+                if (el) el.hidden = this._tourControlsRestore;
+                this._tourControlsRestore = undefined;
+            }
+        };
+        this._startTour = () => {
+            this._endTour();
+            // Temporarily show panels hidden in Help mode so the tour can highlight them
+            const stepsEl = document.getElementById('panelSteps');
+            const controlsEl = document.getElementById('panelControls');
+            this._tourStepsRestore = stepsEl ? stepsEl.hidden : undefined;
+            this._tourControlsRestore = controlsEl ? controlsEl.hidden : undefined;
+            if (stepsEl) stepsEl.hidden = false;
+            if (controlsEl) controlsEl.hidden = false;
+            this._tourIdx = -1;
+            nextTour();
+        };
         this.tour.startBtn?.addEventListener('click', this._startTour);
         this.tour.next?.addEventListener('click', nextTour);
         this.tour.back?.addEventListener('click', prevTour);
@@ -869,7 +912,7 @@ class UiBindings {
                     try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
                     this.o.setProblem(prob.a, prob.b, prob.op);
                 } else {
-                    const newNum = Math.floor(Math.random() * 100);
+                    const newNum = Math.floor(Math.random() * 99) + 1;
                     try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
                     this.o.setTutorialNumber(newNum);
                 }
