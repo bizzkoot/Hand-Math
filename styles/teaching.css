@@ -337,23 +337,41 @@
 /* Bottom-left attribution overlay */
 .hm-credits { 
     position:absolute; 
-    left:12px; 
-    bottom:12px; 
+    left:8px; 
+    bottom:8px; 
     z-index:6; 
-    font-size:11px; 
-    line-height:1.4; 
+    font-size:9.5px; 
     color:var(--hm-muted); 
     background: var(--hm-panel); 
     border:1px solid var(--border-color); 
-    border-radius:10px; 
-    padding:6px 10px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+    border-radius:8px; 
+    height: 24px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    padding: 0 8px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
     backdrop-filter: blur(8px) saturate(140%); 
     -webkit-backdrop-filter: blur(8px) saturate(140%);
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
+    opacity: 0.5;
+}
+.hm-credits:hover {
+    opacity: 1;
 }
 .hm-credits a { color:var(--hm-accent); text-decoration:none; font-weight:600; }
 .hm-credits a:hover { text-decoration:underline; }
+
+@media (max-width: 600px) {
+    .hm-credits {
+        font-size: 8.5px;
+        padding: 0 6px;
+        height: 20px;
+        left: 6px;
+        bottom: 6px;
+        border-radius: 6px;
+    }
+}
 
 /* Dynamic fingertip halo animations */
 @keyframes pulse-halo {
@@ -638,6 +656,59 @@
     .hm-btn-icon {
         width: 30px;
         height: 28px;
+    }
+}
+
+/* Move scene-controls to bottom-right to align with credits */
+.scene-controls {
+    top: auto !important;
+    bottom: 8px !important;
+    right: 8px !important;
+    z-index: 7 !important;
+}
+
+.scene-controls .control-btn {
+    height: 24px !important;
+    padding: 0 8px !important;
+    width: auto !important;
+    border-radius: 8px !important;
+    font-size: 10px !important;
+    font-family: var(--font-sans) !important;
+    background: var(--hm-panel) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--hm-muted) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    backdrop-filter: blur(8px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(140%) !important;
+    opacity: 0.5 !important;
+    transition: all 0.25s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+}
+
+.scene-controls .control-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+}
+
+.scene-controls .control-btn:hover {
+    opacity: 1 !important;
+    transform: translateY(-1px) !important;
+    color: var(--hm-text) !important;
+}
+
+@media (max-width: 600px) {
+    .scene-controls {
+        bottom: 6px !important;
+        right: 6px !important;
+    }
+    .scene-controls .control-btn {
+        height: 20px !important;
+        padding: 0 6px !important;
+        font-size: 9px !important;
+        border-radius: 6px !important;
     }
 }
 
