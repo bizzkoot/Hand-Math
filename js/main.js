@@ -1568,35 +1568,54 @@ class HandMathApp {
 
         this._log('info', `📐 CONTAINER: ${containerWidth}px × ${containerHeight}px (aspect: ${aspectRatio.toFixed(2)})`);
 
-        // Calculate optimal settings based on container size
-        let optimalFOV = 38;
-        let optimalDistance = 2.6;
-        let optimalScale = 0.62;
-        let handSpacing = 0.90;
-
-        // Adjust for different aspect ratios
-        if (aspectRatio > 2.0) {
-            // Very wide container
-            optimalFOV = 34;
-            optimalDistance = 2.4;
-            optimalScale = 0.55;
-            handSpacing = 1.00;
-            this._log('info', '📏 ADJUSTMENT: Wide container detected');
-        } else if (aspectRatio < 1.0) {
-            // Mobile Portrait / very narrow container
-            optimalFOV = 38;
-            optimalDistance = 3.2;
-            optimalScale = 0.48;
-            handSpacing = 0.70;
-            this._log('info', '📏 ADJUSTMENT: Narrow container detected');
+        // 1. Determine optimal camera distance based on aspect ratio
+        let optimalDistance = 2.8;
+        if (aspectRatio < 1.0) {
+            // Narrow screens: push camera back to fit everything horizontally
+            optimalDistance = 2.8 + (1.0 - aspectRatio) * 0.8;
         } else if (aspectRatio < 1.5) {
-            // Tall container - fixed height should prevent extreme cases
-            optimalFOV = 38;
+            // Mid-range (phone portrait ~1.1–1.4): interpolate closer to maximize hand size
+            optimalDistance = 2.8 - ((aspectRatio - 1.0) / 0.5) * 0.2;
+        } else {
+            // Wide screens: bring camera closer to maximize size
             optimalDistance = 2.6;
-            optimalScale = 0.68;
-            handSpacing = 0.85;
-            this._log('info', '📏 ADJUSTMENT: Tall container detected');
         }
+        // Clamp to a safe range [2.5, 3.6] to prevent extreme perspectives
+        optimalDistance = Math.max(2.5, Math.min(3.6, optimalDistance));
+
+        // 2. Calculate vertical FOV and visible height/width in world units at Z=0
+        const optimalFOV = 38;
+        const halfFovRad = (optimalFOV * Math.PI) / 180 / 2;
+        const visibleHeight = 2 * optimalDistance * Math.tan(halfFovRad);
+        const visibleWidth = aspectRatio * visibleHeight;
+
+        // 3. Compute optimal scale dynamically to fit both width and height bounds
+        // Vertical: hand model height ≈ 1.45 × scale, use 52% of visible height (bottom-anchored)
+        const maxScaleVertical = (visibleHeight * 0.52) / 1.45;
+
+        // Horizontal: spacing = 1.2 × scale, hand half-width ≈ 0.3 × scale
+        // Total from center to outer edge ≈ 1.5 × scale, keep within 48% of visible width
+        // 1.5 * scale <= visibleWidth * 0.48 => scale <= visibleWidth * 0.32
+        const maxScaleHorizontal = visibleWidth * 0.32;
+
+        let optimalScale = Math.min(maxScaleVertical, maxScaleHorizontal);
+
+        // Clamp scale to a visually appealing range [0.45, 0.70]
+        optimalScale = Math.max(0.45, Math.min(0.70, optimalScale));
+
+        // 4. Calculate spacing Factor dynamically to keep hands well-spaced without clipping
+        let spacingFactor = 1.2;
+        if (aspectRatio > 1.0) {
+            // Gradually widen the spacing on wider viewports to utilize empty screen space
+            spacingFactor = 1.2 + Math.min(1.0, aspectRatio - 1.0) * 0.30;
+        }
+        const handSpacing = spacingFactor * optimalScale;
+
+        // 5. Position wrists dynamically relative to the bottom edge of the viewport
+        // Instead of a static handY, we place the bottom boundary of the wrist (-0.35 * scale)
+        // exactly at 4% above the bottom viewport edge (-visibleHeight * 0.46)
+        const wristBottomWorld = -visibleHeight * 0.46;
+        const handY = wristBottomWorld + (0.35 * optimalScale);
 
         // Apply optimal camera settings
         this._log('info', '📷 CAMERA: Applying responsive settings...');
@@ -1606,8 +1625,6 @@ class HandMathApp {
         this.camera.lookAt(0, 0, 0);
         this._log('info', `✅ CAMERA: FOV=${optimalFOV}°, Position=[0, 0.2, ${optimalDistance}]`);
 
-        // Keep consistent Y position - lowered to prevent finger clipping
-        const handY = -0.75;
         this.baseHandY = handY;
 
         // Apply optimal left hand settings - INTERACTIVE MODE (controlled by sliders)
