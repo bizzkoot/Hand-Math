@@ -64,6 +64,19 @@
 - Pattern application (direct targets):
   - `js/main.js:999` (applyFingerPattern)
 
+## PWA & Service Worker
+- `manifest.json` enables install-to-home-screen (standalone mode).
+- `sw.js` service worker: HTML is network-first (always fresh), static assets cache-first, models/images cache-first.
+- `js/main.js:1773` registers the SW and shows an update banner when a new version is detected.
+- SW checks for updates every 30 minutes automatically.
+
+### Ensuring deployed updates reach users
+When you deploy changes that users must receive, bump the version in `sw.js:8`:
+```js
+const CACHE_NAME = 'hand-math-v1.0.0';  // → v1.0.1, v1.0.2, etc.
+```
+This invalidates old caches and triggers the "New version available" banner in all active clients.
+
 ### Manual QA Checklist
 - [ ] No vertical page scroll; keyboard shortcuts A (Auto) and R (Reset) work
 - [ ] Info modal opens/closes; Fullscreen toggles the app data attribute

@@ -1,10 +1,19 @@
+<div align="center">
+
+<img src="assets/icons/icon.svg" width="96" alt="Hand Math Icon" style="margin-bottom: 8px;">
+
 # 3D Hand Math — Count to 99
 
 An interactive 3D hand visualization app that teaches counting and arithmetic (0–99) using finger patterns on two hands. Built with Three.js.
 
-**Left hand = tens** (0, 10, 20, ... 90), **Right hand = ones** (0–9). Each digit follows a specific finger sequence where **thumb = 5** and other fingers = 1 each.
+**Left hand = tens** (0, 10, 20, ... 90) &nbsp;|&nbsp; **Right hand = ones** (0–9)  
+Each digit follows a specific finger sequence where **thumb = 5** and other fingers = 1 each.
 
-<img src="assets/Screenshot.png" alt="App Screenshot" width="700">
+<br>
+<img src="assets/Screenshot.png" alt="App Screenshot" width="700" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15);">
+
+</div>
+
 
 ## Features
 
@@ -46,6 +55,16 @@ npm run serve
 ```
 
 The app must be served over HTTP (not `file://`) due to CORS restrictions on GLTF model loading.
+
+## 📱 Progressive Web App (PWA)
+
+This application is PWA-enabled, allowing you to install it directly onto your desktop or mobile device for standalone, offline access:
+
+* **Desktop (Chrome / Edge)**: Click the **Install** icon on the right side of the address bar.
+* **iOS (Safari)**: Tap the **Share** button and select **Add to Home Screen**.
+* **Android (Chrome)**: Tap the three-dot menu and select **Install App**.
+* **Offline Access & Cache**: Assets, scripts, stylesheets, and 3D GLTF models are cached locally. The app checks for newer updates automatically every 30 minutes and prompts a reload banner when updates are ready.
+
 
 <details>
 <summary><h2 style="display:inline">📁 Project Structure</h2></summary>
@@ -99,17 +118,17 @@ Hand_Math/
 Each hand uses a specific finger sequence (not binary counting). The thumb represents 5, while each other finger represents 1:
 
 | Value | Thumb | Index | Middle | Ring | Pinky |
-|-------|-------|-------|--------|------|-------|
-| 0     | ✗     | ✗     | ✗      | ✗    | ✗     |
-| 1     | ✗     | ✓     | ✗      | ✗    | ✗     |
-| 2     | ✗     | ✓     | ✓      | ✗    | ✗     |
-| 3     | ✗     | ✓     | ✓      | ✓    | ✗     |
-| 4     | ✗     | ✓     | ✓      | ✓    | ✓     |
-| 5     | ✓     | ✗     | ✗      | ✗    | ✗     |
-| 6     | ✓     | ✓     | ✗      | ✗    | ✗     |
-| 7     | ✓     | ✓     | ✓      | ✗    | ✗     |
-| 8     | ✓     | ✓     | ✓      | ✓    | ✗     |
-| 9     | ✓     | ✓     | ✓      | ✓    | ✓     |
+| :---: | :---: | :---: | :---:  | :---:| :---: |
+|   0   |   ✗   |   ✗   |   ✗    |  ✗   |   ✗   |
+|   1   |   ✗   |   ✓   |   ✗    |  ✗   |   ✗   |
+|   2   |   ✗   |   ✓   |   ✓    |  ✗   |   ✗   |
+|   3   |   ✗   |   ✓   |   ✓    |  ✓   |   ✗   |
+|   4   |   ✗   |   ✓   |   ✓    |  ✓   |   ✓   |
+|   5   |   ✓   |   ✗   |   ✗    |  ✗   |   ✗   |
+|   6   |   ✓   |   ✓   |   ✗    |  ✗   |   ✗   |
+|   7   |   ✓   |   ✓   |   ✓    |  ✗   |   ✗   |
+|   8   |   ✓   |   ✓   |   ✓    |  ✓   |   ✗   |
+|   9   |   ✓   |   ✓   |   ✓    |  ✓   |   ✓   |
 
 The total value is `(left hand pattern value × 10) + right hand pattern value`, giving a range of 0–99.
 

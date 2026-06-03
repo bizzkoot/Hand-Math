@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" /> <!-- Very dark slate base -->
+      <stop offset="40%" stop-color="#1e3a8a" /> <!-- Rich dark blue -->
+      <stop offset="100%" stop-color="#2563eb" /> <!-- Vibrant theme blue -->
+    </linearGradient>
+
+    <!-- Mesh Line Gradient -->
+    <linearGradient id="meshGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Node Glow Filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <!-- Element Drop Shadow -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Glassmorphic Math Circle Gradient -->
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.03" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background squircle -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)" />
+
+  <!-- Subtle grid layout overlay to look modern / techy -->
+  <g stroke="#ffffff" stroke-opacity="0.04" stroke-width="2">
+    <line x1="0" y1="128" x2="512" y2="128" />
+    <line x1="0" y1="256" x2="512" y2="256" />
+    <line x1="0" y1="384" x2="512" y2="384" />
+    <line x1="128" y1="0" x2="128" y2="512" />
+    <line x1="256" y1="0" x2="256" y2="512" />
+    <line x1="384" y1="0" x2="384" y2="512" />
+  </g>
+
+  <!-- Circular background glow behind hand -->
+  <circle cx="256" cy="280" r="140" fill="#38bdf8" fill-opacity="0.18" filter="url(#glow)" />
+
+  <!-- Math symbols glass container circles -->
+  <g filter="url(#shadow)">
+    <!-- Plus -->
+    <circle cx="100" cy="140" r="34" fill="url(#glassGrad)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5" />
+    <!-- Minus -->
+    <circle cx="412" cy="140" r="34" fill="url(#glassGrad)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5" />
+    <!-- Multiply -->
+    <circle cx="100" cy="372" r="34" fill="url(#glassGrad)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5" />
+    <!-- Equals -->
+    <circle cx="412" cy="372" r="34" fill="url(#glassGrad)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5" />
+  </g>
+
+  <!-- Math Symbols Paths -->
+  <g stroke="#ffffff" stroke-width="6" stroke-linecap="round" filter="url(#shadow)">
+    <!-- Plus -->
+    <path d="M 88 140 H 112 M 100 128 V 152" />
+    <!-- Minus -->
+    <path d="M 400 140 H 424" />
+    <!-- Multiply -->
+    <path d="M 90 362 L 110 382 M 110 362 L 90 382" />
+    <!-- Equals -->
+    <path d="M 400 366 H 424 M 400 378 H 424" />
+  </g>
+
+  <!-- 3D Hand Mesh Structure -->
+  <!-- Triangle / Polygon wireframe fills for 3D hand volume -->
+  <g fill="#38bdf8" fill-opacity="0.08" stroke="#38bdf8" stroke-opacity="0.25" stroke-width="2" stroke-dasharray="4 4">
+    <!-- Palm polygons -->
+    <polygon points="256,420 180,340 220,270" />
+    <polygon points="256,420 220,270 256,260" />
+    <polygon points="256,420 256,260 292,270" />
+    <polygon points="256,420 292,270 330,290" />
+    <!-- Outer hand edge -->
+    <polygon points="180,340 220,270 256,260 292,270 330,290 256,420" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-dasharray="none" stroke-width="1.5" />
+  </g>
+
+  <!-- Hand bones (skeletal connections) -->
+  <g stroke="url(#meshGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+    <!-- Thumb -->
+    <path d="M 256 420 L 180 340 L 130 310 L 90 290" />
+    <!-- Index -->
+    <path d="M 220 270 L 210 180 L 200 100" />
+    <!-- Middle -->
+    <path d="M 256 260 L 256 160 L 256 75" />
+    <!-- Ring -->
+    <path d="M 292 270 L 302 180 L 312 100" />
+    <!-- Pinky -->
+    <path d="M 330 290 L 350 210 L 370 140" />
+  </g>
+
+  <!-- Glow Overlay for Bones (thinner bright lines to give a 3D glow core) -->
+  <g stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Thumb -->
+    <path d="M 256 420 L 180 340 L 130 310 L 90 290" stroke-opacity="0.8" />
+    <!-- Index -->
+    <path d="M 220 270 L 210 180 L 200 100" stroke-opacity="0.8" />
+    <!-- Middle -->
+    <path d="M 256 260 L 256 160 L 256 75" stroke-opacity="0.8" />
+    <!-- Ring -->
+    <path d="M 292 270 L 302 180 L 312 100" stroke-opacity="0.8" />
+    <!-- Pinky -->
+    <path d="M 330 290 L 350 210 L 370 140" stroke-opacity="0.8" />
+  </g>
+
+  <!-- Joint Knuckles (glowing nodes) -->
+  <g fill="#ffffff" filter="url(#glow)">
+    <!-- Wrist -->
+    <circle cx="256" cy="420" r="12" />
+    <!-- Palm / Knuckles base -->
+    <circle cx="180" cy="340" r="10" />
+    <circle cx="220" cy="270" r="10" />
+    <circle cx="256" cy="260" r="10" />
+    <circle cx="292" cy="270" r="10" />
+    <circle cx="330" cy="290" r="10" />
+    <!-- Middle joints -->
+    <circle cx="130" cy="310" r="8" />
+    <circle cx="210" cy="180" r="8" fill="#38bdf8" />
+    <circle cx="256" cy="160" r="8" fill="#38bdf8" />
+    <circle cx="302" cy="180" r="8" fill="#38bdf8" />
+    <circle cx="350" cy="210" r="8" fill="#38bdf8" />
+    <!-- Finger tips -->
+    <circle cx="90" cy="290" r="10" />
+    <circle cx="200" cy="100" r="10" />
+    <circle cx="256" cy="75" r="10" />
+    <circle cx="312" cy="100" r="10" />
+    <circle cx="370" cy="140" r="10" />
+  </g>
+</svg>

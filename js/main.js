@@ -1769,3 +1769,82 @@ document.addEventListener('DOMContentLoaded', () => {
             window.handMathApp.dispose();
         }
     });
+
+    // ─── Service Worker Registration (PWA) ───────────────────────────
+    (function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+        });
+
+        function showUpdateBanner(sw) {
+            // Avoid spamming multiple banners
+            const existing = document.getElementById('sw-update-banner');
+            if (existing) return;
+
+            const banner = document.createElement('div');
+            banner.id = 'sw-update-banner';
+            banner.style.cssText = [
+                'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;',
+                'background:#2563eb;color:#fff;padding:12px 20px;border-radius:12px;',
+                'box-shadow:0 4px 20px rgba(0,0,0,0.3);font-family:Inter,sans-serif;',
+                'font-size:14px;display:flex;align-items:center;gap:14px;',
+                'animation:swSlideUp 0.4s ease;max-width:90vw;'
+            ].join('');
+            banner.innerHTML = '<span>New version available</span>' +
+                '<button id="sw-update-btn" style="background:#fff;color:#2563eb;border:none;' +
+                'padding:6px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">' +
+                'Refresh</button>';
+            document.body.appendChild(banner);
+
+            // Inject slide-up keyframe if not present
+            if (!document.getElementById('sw-anim-style')) {
+                const style = document.createElement('style');
+                style.id = 'sw-anim-style';
+                style.textContent = '@keyframes swSlideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+                document.head.appendChild(style);
+            }
+
+            document.getElementById('sw-update-btn').addEventListener('click', () => {
+                banner.remove();
+                if (sw && sw.waiting) {
+                    sw.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+            });
+        }
+
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('[SW] Registered, scope:', registration.scope);
+
+                // If a new SW is waiting, immediately show the banner
+                if (registration.waiting) {
+                    showUpdateBanner(registration);
+                }
+
+                // Listen for new SW being installed
+                registration.addEventListener('updatefound', () => {
+                    const newSW = registration.installing;
+                    if (!newSW) return;
+                    console.log('[SW] New version found, installing...');
+                    newSW.addEventListener('statechange', () => {
+                        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('[SW] New version ready');
+                            showUpdateBanner(registration);
+                        }
+                    });
+                });
+
+                // Periodic update check (every 30 minutes)
+                setInterval(() => {
+                    registration.update().catch(() => {});
+                }, 30 * 60 * 1000);
+            })
+            .catch((err) => {
+                console.warn('[SW] Registration failed:', err);
+            });
+    })();
