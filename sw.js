@@ -8,34 +8,34 @@
  * - Update notification: when new SW detected, notify all clients to refresh
  */
 
-const CACHE_NAME = 'hand-math-v1.0.1';
+const CACHE_NAME = 'hand-math-v1.0.2';
 const STATIC_CACHE = CACHE_NAME + '-static';
 const MODEL_CACHE = CACHE_NAME + '-models';
 
 const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/styles/main.css',
-    '/styles/teaching.css',
-    '/js/handAdapter.js',
-    '/js/handBoneMap.js',
-    '/js/handController.js',
-    '/js/handDebug.js',
-    '/js/handMathCalculator.js',
-    '/js/i18n.js',
-    '/js/main.js',
-    '/js/realisticHandGeometry.js',
-    '/js/skinToneService.js',
-    '/js/stepEngine.js',
-    '/js/arithmeticBuilder.js',
-    '/js/teachingOrchestrator.js',
-    '/js/uiBindings.js',
-    '/js/testApi.js',
-    '/vendor/threejs/three.min.js',
-    '/vendor/threejs/OrbitControls.js',
-    '/vendor/threejs/GLTFLoader.js',
-    '/manifest.json',
-    '/assets/icons/icon.svg'
+    './',
+    'index.html',
+    'styles/main.css',
+    'styles/teaching.css',
+    'js/handAdapter.js',
+    'js/handBoneMap.js',
+    'js/handController.js',
+    'js/handDebug.js',
+    'js/handMathCalculator.js',
+    'js/i18n.js',
+    'js/main.js',
+    'js/realisticHandGeometry.js',
+    'js/skinToneService.js',
+    'js/stepEngine.js',
+    'js/arithmeticBuilder.js',
+    'js/teachingOrchestrator.js',
+    'js/uiBindings.js',
+    'js/testApi.js',
+    'vendor/threejs/three.min.js',
+    'vendor/threejs/OrbitControls.js',
+    'vendor/threejs/GLTFLoader.js',
+    'manifest.json',
+    'assets/icons/icon.svg'
 ];
 
 // Install: precache static assets
@@ -85,8 +85,8 @@ function isStaticAsset(request) {
     const url = new URL(request.url);
     const path = url.pathname;
     return path.match(/\.(js|css|svg|ico)$/) ||
-           path.startsWith('/vendor/') ||
-           path === '/manifest.json';
+           path.includes('/vendor/') ||
+           path.endsWith('/manifest.json');
 }
 
 // Helper: is model/binary asset?
@@ -94,8 +94,8 @@ function isModelAsset(request) {
     const url = new URL(request.url);
     const path = url.pathname;
     return path.match(/\.(glb|gltf|bin|png|jpg|jpeg|gif|webp|zip|woff2?)$/) ||
-           path.startsWith('/assets/models/') ||
-           path.startsWith('/assets/textures/');
+           path.includes('/assets/models/') ||
+           path.includes('/assets/textures/');
 }
 
 // Fetch: route by type

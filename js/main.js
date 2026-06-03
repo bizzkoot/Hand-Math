@@ -1817,7 +1817,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('sw.js')
             .then((registration) => {
                 console.log('[SW] Registered, scope:', registration.scope);
 
