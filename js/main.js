@@ -625,6 +625,91 @@ class HandMathApp {
         if (this.canvas) {
             this.canvas.addEventListener('pointerdown', this.onCanvasPointerDown.bind(this));
         }
+
+        // +/- Hand control buttons
+        this._wireHandControls();
+    }
+
+    /**
+     * Wire up +/- hand control button events
+     */
+    _wireHandControls() {
+        document.querySelectorAll('.hand-control-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._onHandControlClick(e.currentTarget);
+            });
+        });
+    }
+
+    /**
+     * Handle +/- hand control button clicks
+     */
+    _onHandControlClick(btn) {
+        if (!this.calculator || !this.handController) return;
+
+        const hand = btn.dataset.hand;
+        const isPlus = btn.classList.contains('hand-control-plus');
+        const state = this.calculator.getCurrentState();
+        let value = hand === 'left' ? state.left : state.right;
+
+        if (isPlus) {
+            value = (value + 1) % 10;
+        } else {
+            value = (value + 9) % 10; // wraps around
+        }
+
+        const pattern = this.calculator.setHandValue(hand, value);
+        this.applyFingerPattern(hand, pattern);
+        this.updateAllDisplays();
+        this.highlightActiveButton(hand, hand === 'left' ? value * 10 : value);
+    }
+
+    /**
+     * Update +/- button positions to follow hand wrists via world-to-screen projection
+     */
+    updateHandWristControls() {
+        const container = document.getElementById('handControlsContainer');
+        if (!container) return;
+        if (!this.leftHand || !this.rightHand || !this.camera) {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = '';
+
+        const rect = this.canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const tempV = new THREE.Vector3();
+
+        ['left', 'right'].forEach(side => {
+            const el = document.getElementById(side === 'left' ? 'handControlsLeft' : 'handControlsRight');
+            if (!el) return;
+            if (el.hidden) return;
+
+            const hand = side === 'left' ? this.leftHand : this.rightHand;
+            if (!hand) return;
+
+            hand.getWorldPosition(tempV);
+            tempV.y += 0.05 * hand.scale.y;
+
+            tempV.project(this.camera);
+
+            const x = Math.round((tempV.x * 0.5 + 0.5) * rect.width);
+            const y = Math.round((-tempV.y * 0.5 + 0.5) * rect.height);
+
+            if (x >= -50 && x <= rect.width + 50 && y >= -50 && y <= rect.height + 50) {
+                const key = '_hmBtnPos' + side;
+                el.style.display = '';
+                if (el[key] && Math.abs(el[key].x - x) < 2 && Math.abs(el[key].y - y) < 2) return;
+                el[key] = { x, y };
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.style.transform = 'translate(-50%, 0)';
+            } else {
+                el.style.display = 'none';
+            }
+        });
     }
 
     /**
@@ -1467,6 +1552,9 @@ class HandMathApp {
 
         // Update projection-based fingertip halos
         this.updateFingertipHalos();
+
+        // Update +/- hand control button positions (world→screen projection)
+        this.updateHandWristControls();
     }
 
     /**

@@ -110,6 +110,16 @@
                     <div id="overlayRight" class="hm-overlay right" aria-hidden="true"></div>
                     <div id="carryBorrowCue" class="hm-carry-borrow" aria-hidden="true"></div>
                     <div id="halos-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5;"></div>
+                    <div id="handControlsContainer" class="hand-controls-container">
+                        <div id="handControlsLeft" class="hand-controls hand-controls-left" hidden>
+                            <button class="hand-control-btn hand-control-minus" data-hand="left" aria-label="Left hand decrement">−</button>
+                            <button class="hand-control-btn hand-control-plus" data-hand="left" aria-label="Left hand increment">+</button>
+                        </div>
+                        <div id="handControlsRight" class="hand-controls hand-controls-right" hidden>
+                            <button class="hand-control-btn hand-control-minus" data-hand="right" aria-label="Right hand decrement">−</button>
+                            <button class="hand-control-btn hand-control-plus" data-hand="right" aria-label="Right hand increment">+</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -155,36 +165,52 @@
                 <!-- Challenge Content -->
                 <div id="challengeContent" class="hm-challenge" hidden>
                     <div id="challengeStartScreen" class="challenge-screen">
-                        <h3 class="challenge-title" data-i18n="challenge.title">Math Challenge Mode</h3>
-                        <p class="challenge-desc" data-i18n="challenge.desc">Test your hand math skills! Show the requested number on the hands or solve the arithmetic problem before the timer runs out.</p>
-                        <div class="challenge-options">
-                            <label for="challengeDiff" data-i18n="challenge.difficulty">Difficulty:</label>
-                            <select id="challengeDiff" class="hm-level">
-                                <option value="1" data-i18n="challenge.level1">Level 1 (Single Hand)</option>
-                                <option value="2" selected data-i18n="challenge.level2">Level 2 (No Carry/Borrow)</option>
-                                <option value="3" data-i18n="challenge.level3">Level 3 (Carry/Borrow)</option>
-                            </select>
+                        <h3 class="challenge-title" data-i18n="challenge.title">Math Challenge</h3>
+                        <p class="challenge-desc" data-i18n="challenge.desc">Show numbers on the hands to answer each question. Speed earns better gems!</p>
+                        <div id="challengeUnlockInfo" class="challenge-unlock" hidden>
+                            <span id="challengeUnlockMsg" class="challenge-unlock-msg"></span>
                         </div>
                         <button id="btnChallengeStart" class="hm-btn hm-btn-primary" style="margin-top: 15px; width: 100%;" data-i18n="challenge.startBtn">Start Challenge</button>
                     </div>
                     <div id="challengePlayScreen" class="challenge-screen" hidden>
                         <div class="challenge-header-row">
-                            <span id="challengeTimer" class="challenge-timer"></span>
-                            <span id="challengeStreak" class="challenge-streak"></span>
-                            <span id="challengeStars" class="challenge-stars">⭐ 0</span>
+                            <div id="challengeTierBadge" class="challenge-tier-badge challenge-tier-gold" title="Gold">
+                                <span id="challengeTierIcon" class="challenge-tier-icon">✦</span>
+                            </div>
+                            <div class="challenge-header-center">
+                                <span id="challengeRound" class="challenge-round">Round 1/10</span>
+                                <div id="challengeTimerBar" class="challenge-timer-bar">
+                                    <div id="challengeTimerFill" class="challenge-timer-fill challenge-fill-gold"></div>
+                                </div>
+                            </div>
+                            <div class="challenge-gem-display">
+                                <span class="challenge-gem-icon">💎</span>
+                                <span id="challengeGemCount" class="challenge-gem-count">0</span>
+                            </div>
                         </div>
                         
                         <div class="challenge-card">
                             <div id="challengePrompt" class="challenge-prompt"></div>
-                            <div id="challengeProgressFeedback" class="challenge-feedback"></div>
+                            <div id="challengeFeedback" class="challenge-feedback"></div>
+                            <div id="challengeAttempts" class="challenge-attempts"></div>
                         </div>
                         
                         <div id="challengeMessage" class="challenge-msg"></div>
                         
                         <div class="challenge-actions">
-                            <button id="btnChallengeSubmit" class="hm-btn hm-btn-primary" style="flex: 1;" data-i18n="challenge.submitBtn">Submit Answer</button>
-                            <button id="btnChallengeNext" class="hm-btn" style="flex: 1;" hidden data-i18n="challenge.nextBtn">Next Challenge</button>
+                            <button id="btnChallengeHint" class="hm-btn" data-i18n="challenge.hintBtn">Hint</button>
+                            <button id="btnChallengeSubmit" class="hm-btn hm-btn-primary" style="flex: 1;" data-i18n="challenge.submitBtn">Submit</button>
                             <button id="btnChallengeExit" class="hm-btn hm-btn-danger" data-i18n="challenge.exitBtn">Exit</button>
+                        </div>
+                    </div>
+                    <div id="challengeEndScreen" class="challenge-screen" hidden>
+                        <h3 class="challenge-end-title" data-i18n="challenge.endTitle">Challenge Complete!</h3>
+                        <div id="challengeEndGemTray" class="challenge-end-gem-tray"></div>
+                        <p id="challengeEndBreakdown" class="challenge-end-breakdown"></p>
+                        <div id="challengeEndUnlock" class="challenge-end-unlock" hidden></div>
+                        <div class="challenge-actions" style="flex-direction: column; gap: 8px;">
+                            <button id="btnChallengePlayAgain" class="hm-btn hm-btn-primary" style="width: 100%;" data-i18n="challenge.playAgain">Play Again</button>
+                            <button id="btnChallengeEndExit" class="hm-btn" style="width: 100%;" data-i18n="challenge.returnMenu">Return to Menu</button>
                         </div>
                     </div>
                 </div>

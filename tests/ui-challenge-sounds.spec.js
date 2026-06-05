@@ -15,7 +15,7 @@ test.describe('Teaching UI - Challenge Mode & Sound Synthesizer', () => {
     const tabClass = await page.locator('#tabChallenge').getAttribute('class');
     expect(tabClass).toContain('is-active');
 
-    // Start screen visible, play screen hidden
+    // Start screen visible, play/end screens hidden
     await expect(page.locator('#challengeStartScreen')).toBeVisible();
     await expect(page.locator('#challengePlayScreen')).toBeHidden();
 
@@ -37,51 +37,53 @@ test.describe('Teaching UI - Challenge Mode & Sound Synthesizer', () => {
     await soundBtn.click();
     await expect(soundBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // 3. Select difficulty and start challenge
-    await page.selectOption('#challengeDiff', '2');
+    // 3. Start challenge (no difficulty selector in new design)
     await page.click('#btnChallengeStart');
 
     // Start screen hidden, play screen visible
     await expect(page.locator('#challengeStartScreen')).toBeHidden();
     await expect(page.locator('#challengePlayScreen')).toBeVisible();
 
-    // Challenge HUD elements
-    await expect(page.locator('#challengeTimer')).toContainText('s');
-    await expect(page.locator('#challengeStreak')).toContainText('Streak: 0');
-    await expect(page.locator('#challengeStars')).toContainText('0');
+    // Challenge HUD elements (new gem-based design)
+    await expect(page.locator('#challengeRound')).toContainText('Round');
+    await expect(page.locator('#challengeGemCount')).toBeVisible();
+    await expect(page.locator('#challengeTierBadge')).toBeVisible();
     
     const promptText = await page.locator('#challengePrompt').textContent();
     expect(promptText).toBeTruthy();
     expect(promptText?.length).toBeGreaterThan(0);
 
-    // 4. Submit incorrect answer to verify buzzer/error state
-    // Reset hands to 0|0 to ensure we have a different value than the target if target > 0
-    await page.evaluate(() => {
-        window.handMathApp.calculator.setTotalValue(0);
-        window.handMathApp.updateAllDisplays();
-    });
-    
-    // Click Submit
-    await page.click('#btnChallengeSubmit');
-    
-    // Check error message (if prompt target was not 0)
+    // 4. Capture target, then submit a wrong answer to verify buzzer/error state
     const promptTarget = await page.evaluate(() => window.__HM__.ui.challenge.target);
-    if (promptTarget !== 0) {
-        const msgText = await page.locator('#challengeMessage').textContent();
-        expect(msgText).toContain('Try again');
-    }
-
-    // 5. Submit correct answer manually via API (simulating correct hand pose matching)
+    
     if (promptTarget !== null) {
+        // Set a deliberately wrong value (different from target)
+        const wrongVal = promptTarget === 0 ? 5 : 0;
+        await page.evaluate((val) => {
+            window.handMathApp.calculator.setTotalValue(val);
+            window.handMathApp.updateAllDisplays();
+        }, wrongVal);
+        
+        // Click Submit
+        await page.click('#btnChallengeSubmit');
+        
+        // Should see error message
+        await expect(page.locator('#challengeMessage')).not.toBeEmpty();
+        
+        // 5. Now submit correct answer
         await page.evaluate((target) => {
             window.handMathApp.calculator.setTotalValue(target);
             window.handMathApp.updateAllDisplays();
         }, promptTarget);
 
-        // Success message should appear
-        await expect(page.locator('#challengeMessage')).toHaveText(/Correct/i);
-        const newStreak = await page.evaluate(() => window.__HM__.ui.challenge.streak);
-        expect(newStreak).toBe(1);
+        // Click Submit to trigger the answer check (no auto-submit)
+        await page.click('#btnChallengeSubmit');
+
+        // Success message should appear (one of the tier feedback messages)
+        await expect(page.locator('#challengeMessage')).not.toBeEmpty();
+        // Gem count should have increased
+        const gemCount = await page.evaluate(() => window.__HM__.ui.challenge.gems.length);
+        expect(gemCount).toBe(1);
     }
 
     // 6. Exit Challenge Mode

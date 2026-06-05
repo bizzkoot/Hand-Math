@@ -350,70 +350,170 @@ class UiBindings {
         // Challenge Button Listeners
         document.getElementById('btnChallengeStart')?.addEventListener('click', () => this._startChallenge());
         document.getElementById('btnChallengeSubmit')?.addEventListener('click', () => this._onSubmitAnswer());
-        document.getElementById('btnChallengeNext')?.addEventListener('click', () => {
-            this.soundSynth.playClick();
-            this._loadNextChallengeQuestion();
-        });
+        document.getElementById('btnChallengeHint')?.addEventListener('click', () => this._onHint());
         document.getElementById('btnChallengeExit')?.addEventListener('click', () => this._exitChallenge());
+        document.getElementById('btnChallengePlayAgain')?.addEventListener('click', () => this._startChallenge());
+        document.getElementById('btnChallengeEndExit')?.addEventListener('click', () => {
+            this._exitChallenge();
+            this.o.setMode('Tutorial');
+        });
     }
 
     _initChallenge() {
+        // Load persisted difficulty tier
+        let savedTier = parseInt(localStorage.getItem('hm_challenge_tier')) || 0;
+        let savedGems = parseInt(localStorage.getItem('hm_challenge_total_gems')) || 0;
+        let savedUnlockProgress = parseInt(localStorage.getItem('hm_challenge_unlock_progress')) || 0;
+
         this.challenge = {
             active: false,
             target: null,
             timer: null,
-            timeLeft: 15,
-            score: 0,
-            streak: 0,
-            stars: 0,
-            difficulty: 2
+            // Round tracking
+            currentRound: 0,
+            maxRounds: 10,
+            // Tier system
+            tier: 'gold',
+            attemptsLeft: 3,
+            hintUsed: false,
+            // Gem tracking
+            gems: [],
+            // Adaptation
+            recentCorrect: 0,
+            recentWrong: 0,
+            consecutiveCorrect: 0,
+            // Persisted state
+            difficultyTier: savedTier,
+            totalGemsEarned: savedGems,
+            unlockProgress: savedUnlockProgress,
+            // Timer
+            questionStartTime: 0,
+            elapsed: 0,
+            totalWindow: 20000,
+            goldUntil: 5000,
+            silverUntil: 12000,
         };
 
-        // Hook into hand state updates to auto-check answers
+        // Hook into hand state updates for live feedback only (no auto-submit)
         window.onHandMathStateChange = (state) => {
             if (this.challenge && this.challenge.active && this.challenge.target !== null) {
-                const currentTotal = state.total;
-                const feedbackEl = document.getElementById('challengeProgressFeedback');
-                if (feedbackEl) {
-                    feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: currentTotal});
-                }
-                
-                // Automatic success check
-                if (currentTotal === this.challenge.target) {
-                    this._onChallengeSuccess();
+                const feedbackEl = document.getElementById('challengeFeedback');
+                if (feedbackEl && !feedbackEl.classList.contains('challenge-feedback-done')) {
+                    feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: state.total});
                 }
             }
         };
+
+        this._applyTierSettings();
+        this._updateUnlockInfo();
+    }
+
+    _applyTierSettings() {
+        const tier = this.challenge.difficultyTier;
+        if (tier === 0) {
+            // Easy: single hand 0-9, generous windows
+            this.challenge.goldUntil = 7000;
+            this.challenge.silverUntil = 15000;
+            this.challenge.totalWindow = 25000;
+        } else if (tier === 1) {
+            // Medium: two hand 0-99 no carry/borrow
+            this.challenge.goldUntil = 5000;
+            this.challenge.silverUntil = 12000;
+            this.challenge.totalWindow = 20000;
+        } else {
+            // Hard: carry/borrow arithmetic
+            this.challenge.goldUntil = 3000;
+            this.challenge.silverUntil = 8000;
+            this.challenge.totalWindow = 15000;
+        }
+    }
+
+    _updateUnlockInfo() {
+        const needed = this._gemsForNextTier();
+        const el = document.getElementById('challengeUnlockInfo');
+        const msg = document.getElementById('challengeUnlockMsg');
+        if (!el || !msg) return;
+
+        if (this.challenge.unlockProgress >= needed && this.challenge.difficultyTier < 2) {
+            // Unlocked new tier
+            el.hidden = false;
+            msg.textContent = window.i18n.t('challenge.endUnlock');
+        } else if (this.challenge.difficultyTier < 2) {
+            el.hidden = false;
+            msg.textContent = window.i18n.t('challenge.unlockMeter', {
+                current: Math.min(this.challenge.unlockProgress, needed),
+                needed: needed
+            });
+        } else {
+            el.hidden = true;
+        }
+    }
+
+    _gemsForNextTier() {
+        // Tier 0→1 needs 15 gems, 1→2 needs 30 gems
+        if (this.challenge.difficultyTier === 0) return 15;
+        if (this.challenge.difficultyTier === 1) return 30;
+        return Infinity;
     }
 
     _startChallenge() {
         this.soundSynth.playClick();
-        const diffSel = document.getElementById('challengeDiff');
-        const level = parseInt(diffSel?.value) || 2;
 
         this.challenge.active = true;
-        this.challenge.score = 0;
-        this.challenge.streak = 0;
-        this.challenge.stars = 0;
-        this.challenge.difficulty = level;
+        this.challenge.currentRound = 0;
+        this.challenge.gems = [];
+        this.challenge.recentCorrect = 0;
+        this.challenge.recentWrong = 0;
+        this.challenge.consecutiveCorrect = 0;
+
+        this._applyTierSettings();
 
         document.getElementById('challengeStartScreen').hidden = true;
+        document.getElementById('challengeEndScreen').hidden = true;
         document.getElementById('challengePlayScreen').hidden = false;
+
+        // Show hand controls during challenge
+        this._setHandControlsVisibility(true);
 
         this._loadNextChallengeQuestion();
     }
 
+    _setHandControlsVisibility(visible) {
+        const left = document.getElementById('handControlsLeft');
+        const right = document.getElementById('handControlsRight');
+        if (left) left.hidden = !visible;
+        if (right) right.hidden = !visible;
+    }
+
     _loadNextChallengeQuestion() {
-        // Reset hands to closed fists instantly
+        this.challenge.currentRound++;
+
+        // Check if done
+        if (this.challenge.currentRound > this.challenge.maxRounds) {
+            this._endChallengeSession();
+            return;
+        }
+
+        // Reset for new question
         Promise.resolve().then(() => this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }));
 
-        const problem = this._generateChallengeProblem(this.challenge.difficulty);
+        const tier = this.challenge.difficultyTier;
+        const problem = this._generateChallengeProblem(tier);
         this.challenge.target = problem.target;
-        this.challenge.timeLeft = 15;
+        this.challenge.attemptsLeft = 3;
+        this.challenge.hintUsed = false;
+        this.challenge.tier = 'gold';
+        this.challenge.baseTier = 'gold';
+        this.challenge.elapsed = 0;
+        this.challenge.questionStartTime = Date.now();
 
         // Update UI
         document.getElementById('challengePrompt').textContent = problem.prompt;
-        document.getElementById('challengeProgressFeedback').textContent = window.i18n.t('challenge.yourHands', {value: 0});
+        const feedbackEl = document.getElementById('challengeFeedback');
+        if (feedbackEl) {
+            feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: 0});
+            feedbackEl.classList.remove('challenge-feedback-done');
+        }
 
         const msgEl = document.getElementById('challengeMessage');
         if (msgEl) {
@@ -421,64 +521,208 @@ class UiBindings {
             msgEl.textContent = '';
         }
 
-        const timerEl = document.getElementById('challengeTimer');
-        if (timerEl) {
-            timerEl.textContent = `⏳ 15s`;
-            timerEl.classList.remove('low-time');
+        this._updateAttemptsUI();
+        this._updateHeaderUI();
+        this._updateTierUI();
+
+        // Reset timer fill
+        const fill = document.getElementById('challengeTimerFill');
+        if (fill) {
+            fill.style.width = '0%';
+            fill.className = 'challenge-timer-fill challenge-fill-gold';
         }
 
+        document.getElementById('btnChallengeHint').hidden = false;
+        document.getElementById('btnChallengeHint').disabled = false;
         document.getElementById('btnChallengeSubmit').hidden = false;
-        document.getElementById('btnChallengeNext').hidden = true;
+        document.getElementById('btnChallengeSubmit').disabled = false;
 
-        this._updateChallengeStatsUI();
-
-        // Start countdown
+        // Start timer (updates every 200ms for smooth bar)
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = setInterval(() => {
-            this.challenge.timeLeft--;
-            const tEl = document.getElementById('challengeTimer');
-            if (tEl) {
-                tEl.textContent = `⏳ ${this.challenge.timeLeft}s`;
-                if (this.challenge.timeLeft <= 4) {
-                    tEl.classList.add('low-time');
-                }
-            }
-            if (this.challenge.timeLeft <= 0) {
-                this._onChallengeTimeout();
-            }
-        }, 1000);
+            this._tickTimer();
+        }, 200);
 
         this._announce(window.i18n.t('challenge.newQuestion', {prompt: problem.prompt}));
     }
 
-    _onChallengeSuccess() {
+    _tickTimer() {
+        if (!this.challenge.active) return;
+
+        this.challenge.elapsed = Date.now() - this.challenge.questionStartTime;
+        const progress = Math.min(this.challenge.elapsed / this.challenge.totalWindow, 1);
+
+        // Update timer bar
+        const fill = document.getElementById('challengeTimerFill');
+        if (fill) {
+            fill.style.width = `${progress * 100}%`;
+        }
+
+        // Determine base tier from time
+        let baseTier = 'bronze';
+        if (this.challenge.elapsed < this.challenge.goldUntil) {
+            baseTier = 'gold';
+        } else if (this.challenge.elapsed < this.challenge.silverUntil) {
+            baseTier = 'silver';
+        }
+
+        // Update tier badge (effective tier is the lower of baseTier and current)
+        this.challenge.baseTier = baseTier;
+        this._updateTierUI();
+    }
+
+    _computeEffectiveTier() {
+        // Tier drops from: time passing (base), wrong attempts, hint usage
+        const base = this.challenge.baseTier || 'gold';
+        const tierOrder = ['gold', 'silver', 'bronze', 'none'];
+        let baseIdx = tierOrder.indexOf(base);
+
+        // Each wrong attempt or hint drops by one
+        let drops = 0;
+        if (this.challenge.hintUsed) drops++;
+        drops += (3 - this.challenge.attemptsLeft); // each wrong attempt
+
+        const finalIdx = Math.min(baseIdx + drops, tierOrder.length - 1);
+        return tierOrder[finalIdx];
+    }
+
+    _updateTierUI() {
+        const effectiveTier = this._computeEffectiveTier();
+        this.challenge.tier = effectiveTier;
+
+        const badge = document.getElementById('challengeTierBadge');
+        const icon = document.getElementById('challengeTierIcon');
+        if (!badge || !icon) return;
+
+        // Update badge class
+        badge.className = 'challenge-tier-badge';
+        if (effectiveTier === 'gold') {
+            badge.classList.add('challenge-tier-gold');
+            icon.textContent = '✦';
+        } else if (effectiveTier === 'silver') {
+            badge.classList.add('challenge-tier-silver');
+            icon.textContent = '◆';
+        } else if (effectiveTier === 'bronze') {
+            badge.classList.add('challenge-tier-bronze');
+            icon.textContent = '●';
+        } else {
+            badge.classList.add('challenge-tier-none');
+            icon.textContent = '○';
+        }
+
+        // Update timer fill class
+        const fill = document.getElementById('challengeTimerFill');
+        if (fill) {
+            fill.className = 'challenge-timer-fill';
+            if (effectiveTier === 'gold') fill.classList.add('challenge-fill-gold');
+            else if (effectiveTier === 'silver') fill.classList.add('challenge-fill-silver');
+            else if (effectiveTier === 'bronze') fill.classList.add('challenge-fill-bronze');
+            else fill.classList.add('challenge-fill-none');
+        }
+    }
+
+    _updateAttemptsUI() {
+        const el = document.getElementById('challengeAttempts');
+        if (!el) return;
+        if (this.challenge.attemptsLeft === 3) {
+            el.textContent = '';
+        } else if (this.challenge.attemptsLeft === 1) {
+            el.textContent = window.i18n.t('challenge.lastAttempt');
+            el.className = 'challenge-attempts last-attempt';
+        } else {
+            el.textContent = window.i18n.t('challenge.attempts', {left: this.challenge.attemptsLeft});
+            el.className = 'challenge-attempts';
+        }
+    }
+
+    _updateHeaderUI() {
+        const roundEl = document.getElementById('challengeRound');
+        if (roundEl) {
+            roundEl.textContent = window.i18n.t('challenge.round', {
+                current: this.challenge.currentRound,
+                total: this.challenge.maxRounds
+            });
+        }
+
+        const gemCountEl = document.getElementById('challengeGemCount');
+        if (gemCountEl) {
+            gemCountEl.textContent = this.challenge.gems.length;
+        }
+    }
+
+    _onCorrectAnswer() {
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = null;
 
         this.soundSynth.playChime();
 
-        this.challenge.score += 10;
-        this.challenge.streak++;
+        const effectiveTier = this.challenge.tier;
+        this.challenge.gems.push(effectiveTier);
+        this.challenge.totalGemsEarned++;
+        this.challenge.recentCorrect++;
+        this.challenge.consecutiveCorrect++;
+        this.challenge.recentWrong = 0;
 
-        // Award stars
-        if (this.challenge.streak > 0 && this.challenge.streak % 3 === 0) {
-            this.challenge.stars++;
-            this._announce(window.i18n.t('announce.streak'));
+        // Persist
+        localStorage.setItem('hm_challenge_total_gems', String(this.challenge.totalGemsEarned));
+
+        // Unlock progress: gold=3pts, silver=2pts, bronze=1pt
+        let unlockGain = 0;
+        if (effectiveTier === 'gold') {
+            unlockGain = 3;
+        } else if (effectiveTier === 'silver') {
+            unlockGain = 2;
+        } else {
+            unlockGain = 1;
         }
 
+        // Update unlock progress
+        const needed = this._gemsForNextTier();
+        if (this.challenge.difficultyTier < 2) {
+            this.challenge.unlockProgress += unlockGain;
+            localStorage.setItem('hm_challenge_unlock_progress', String(this.challenge.unlockProgress));
+
+            if (this.challenge.unlockProgress >= needed) {
+                // Unlock next tier!
+                this.challenge.difficultyTier++;
+                localStorage.setItem('hm_challenge_tier', String(this.challenge.difficultyTier));
+                localStorage.setItem('hm_challenge_unlock_progress', '0');
+                this.challenge.unlockProgress = 0;
+                this._applyTierSettings();
+            }
+        }
+
+        // Message
         const msgEl = document.getElementById('challengeMessage');
         if (msgEl) {
             msgEl.className = 'challenge-msg success';
-            msgEl.textContent = window.i18n.t('challenge.correct');
+            let gemMsg = '';
+            if (effectiveTier === 'gold') {
+                gemMsg = window.i18n.t('challenge.fastAnswer');
+            } else if (effectiveTier === 'silver') {
+                gemMsg = window.i18n.t('challenge.goodAnswer');
+            } else {
+                gemMsg = window.i18n.t('challenge.slowAnswer');
+            }
+            msgEl.textContent = gemMsg;
         }
 
-        this._updateChallengeStatsUI();
+        this._updateHeaderUI();
 
-        // Hide submit button
-        document.getElementById('btnChallengeSubmit').hidden = true;
+        // Disable buttons
+        document.getElementById('btnChallengeHint').disabled = true;
+        document.getElementById('btnChallengeSubmit').disabled = true;
+        const feedbackEl = document.getElementById('challengeFeedback');
+        if (feedbackEl) feedbackEl.classList.add('challenge-feedback-done');
 
-        // Clear target to prevent double trigger
         this.challenge.target = null;
+
+        // Adaptation check: if 3+ consecutive gold, make future questions slightly harder
+        if (this.challenge.consecutiveCorrect >= 3) {
+            // Within the current tier, nudge the gold window down slightly
+            this.challenge.goldUntil = Math.max(2000, this.challenge.goldUntil - 500);
+            this.challenge.silverUntil = Math.max(5000, this.challenge.silverUntil - 500);
+        }
 
         // Auto-advance after 1.5s
         setTimeout(() => {
@@ -488,53 +732,162 @@ class UiBindings {
         }, 1500);
     }
 
-    _onChallengeTimeout() {
-        if (this.challenge.timer) clearInterval(this.challenge.timer);
-        this.challenge.timer = null;
-
+    _onWrongAnswer() {
         this.soundSynth.playBuzzer();
-        this.challenge.streak = 0;
 
-        const targetVal = this.challenge.target;
-        this.challenge.target = null; // clear target
+        this.challenge.recentWrong++;
+        this.challenge.consecutiveCorrect = 0;
+
+        // If all attempts used, skip
+        this.challenge.attemptsLeft--;
+        this._updateAttemptsUI();
+        this._updateTierUI();
 
         const msgEl = document.getElementById('challengeMessage');
         if (msgEl) {
             msgEl.className = 'challenge-msg error';
-            msgEl.textContent = window.i18n.t('challenge.timeUp');
+            msgEl.textContent = window.i18n.t('challenge.tryAgain', {value: this._getCurrentHandTotal()});
         }
 
-        // Show correct fingers on hands
-        const left = Math.floor(targetVal / 10);
-        const right = targetVal % 10;
-        Promise.resolve().then(() => this.o.engine?.adapter?.animateDigits({ left, right, mode: 'instant', durationMs: 0 }));
+        if (this.challenge.attemptsLeft <= 0) {
+            this._skipQuestion();
+            return;
+        }
+    }
 
-        this._updateChallengeStatsUI();
+    _getCurrentHandTotal() {
+        try {
+            return window.handMathApp?.calculator?.calculateTotal(
+                window.handMathApp.calculator.getCurrentState().left,
+                window.handMathApp.calculator.getCurrentState().right
+            ) || 0;
+        } catch (_) {
+            return 0;
+        }
+    }
 
-        document.getElementById('btnChallengeSubmit').hidden = true;
-        document.getElementById('btnChallengeNext').hidden = false;
+    _skipQuestion() {
+        if (this.challenge.timer) clearInterval(this.challenge.timer);
+        this.challenge.timer = null;
 
-        this._announce(window.i18n.t('challenge.timeUpAnnounce', {value: targetVal}));
+        const targetVal = this.challenge.target;
+        this.challenge.target = null;
+
+        const msgEl = document.getElementById('challengeMessage');
+        if (msgEl) {
+            msgEl.className = 'challenge-msg error';
+            msgEl.textContent = window.i18n.t('challenge.skipped');
+        }
+
+        // Show correct answer
+        if (targetVal !== null) {
+            const left = Math.floor(targetVal / 10);
+            const right = targetVal % 10;
+            Promise.resolve().then(() => this.o.engine?.adapter?.animateDigits({ left, right, mode: 'instant', durationMs: 0 }));
+        }
+
+        document.getElementById('btnChallengeHint').disabled = true;
+        document.getElementById('btnChallengeSubmit').disabled = true;
+        const feedbackEl = document.getElementById('challengeFeedback');
+        if (feedbackEl) feedbackEl.classList.add('challenge-feedback-done');
+
+        // Adapt: make easier
+        this.challenge.goldUntil = Math.min(10000, this.challenge.goldUntil + 1000);
+        this.challenge.silverUntil = Math.min(20000, this.challenge.silverUntil + 1000);
+
+        setTimeout(() => {
+            if (this.o.mode === 'Challenge' && this.challenge.active) {
+                this._loadNextChallengeQuestion();
+            }
+        }, 2000);
     }
 
     _onSubmitAnswer() {
         if (!this.challenge.active || this.challenge.target === null) return;
         
-        const currentTotal = window.handMathApp?.calculator?.calculateTotal(
-            window.handMathApp.calculator.getCurrentState().left,
-            window.handMathApp.calculator.getCurrentState().right
-        ) || 0;
+        const currentTotal = this._getCurrentHandTotal();
 
         if (currentTotal === this.challenge.target) {
-            this._onChallengeSuccess();
+            this._onCorrectAnswer();
         } else {
-            this.soundSynth.playBuzzer();
-            const msgEl = document.getElementById('challengeMessage');
-            if (msgEl) {
-                msgEl.className = 'challenge-msg error';
-                msgEl.textContent = window.i18n.t('challenge.tryAgain', {value: currentTotal});
+            this._onWrongAnswer();
+        }
+    }
+
+    _onHint() {
+        if (!this.challenge.active || this.challenge.target === null) return;
+        if (this.challenge.hintUsed || this.challenge.attemptsLeft <= 0) return;
+
+        this.soundSynth.playClick();
+        this.challenge.hintUsed = true;
+
+        const target = this.challenge.target;
+        const low = Math.max(0, target - 5);
+        const high = Math.min(99, target + 5);
+
+        const msgEl = document.getElementById('challengeMessage');
+        if (msgEl) {
+            msgEl.className = 'challenge-msg';
+            msgEl.textContent = window.i18n.t('challenge.hintTitle', {low, high});
+        }
+
+        this._updateTierUI();
+        document.getElementById('btnChallengeHint').disabled = true;
+    }
+
+    _endChallengeSession() {
+        if (this.challenge.timer) clearInterval(this.challenge.timer);
+        this.challenge.timer = null;
+        this.challenge.target = null;
+
+        document.getElementById('challengePlayScreen').hidden = true;
+        document.getElementById('challengeEndScreen').hidden = false;
+
+        this._setHandControlsVisibility(false);
+
+        // Build gem tray display
+        const tray = document.getElementById('challengeEndGemTray');
+        if (tray) {
+            tray.innerHTML = '';
+            this.challenge.gems.forEach(tier => {
+                const gem = document.createElement('span');
+                gem.className = 'challenge-end-gem';
+                if (tier === 'gold') {
+                    gem.textContent = '✦';
+                    gem.classList.add('gem-gold');
+                } else if (tier === 'silver') {
+                    gem.textContent = '◆';
+                    gem.classList.add('gem-silver');
+                } else {
+                    gem.textContent = '●';
+                    gem.classList.add('gem-bronze');
+                }
+                tray.appendChild(gem);
+            });
+        }
+
+        // Show breakdown
+        const gold = this.challenge.gems.filter(g => g === 'gold').length;
+        const silver = this.challenge.gems.filter(g => g === 'silver').length;
+        const bronze = this.challenge.gems.filter(g => g === 'bronze').length;
+        const breakdownEl = document.getElementById('challengeEndBreakdown');
+        if (breakdownEl) {
+            breakdownEl.textContent = window.i18n.t('challenge.endGemBreakdown', {gold, silver, bronze});
+        }
+
+        // Unlock message
+        const unlockEl = document.getElementById('challengeEndUnlock');
+        if (unlockEl) {
+            const needed = this._gemsForNextTier();
+            if (this.challenge.difficultyTier < 2 && this.challenge.unlockProgress >= needed) {
+                unlockEl.hidden = false;
+                unlockEl.textContent = window.i18n.t('challenge.endUnlock');
+            } else if (gold === this.challenge.maxRounds) {
+                unlockEl.hidden = false;
+                unlockEl.textContent = window.i18n.t('challenge.endPerfect');
+            } else {
+                unlockEl.hidden = true;
             }
-            this._announce(window.i18n.t('challenge.incorrect', {value: currentTotal}));
         }
     }
 
@@ -544,43 +897,36 @@ class UiBindings {
         this.challenge.active = false;
         this.challenge.target = null;
 
+        this._setHandControlsVisibility(false);
+
         document.getElementById('challengeStartScreen').hidden = false;
         document.getElementById('challengePlayScreen').hidden = true;
+        document.getElementById('challengeEndScreen').hidden = true;
 
         // Reset hands to 0
         Promise.resolve().then(() => this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }));
     }
 
-    _updateChallengeStatsUI() {
-        document.getElementById('challengeStreak').textContent = window.i18n.t('challenge.streak', {streak: this.challenge.streak});
-        document.getElementById('challengeStars').textContent = `⭐ ${this.challenge.stars}`;
-        
-        this._announce(window.i18n.t('challenge.scoreAnnounce', {score: this.challenge.score, streak: this.challenge.streak, stars: this.challenge.stars}));
-    }
-
-    _generateChallengeProblem(level) {
-        if (level === 1) {
-            // Level 1: Single Hand only (Ones or Tens)
-            if (Math.random() < 0.5) {
-                // Ones only (0-9)
-                const val = Math.floor(Math.random() * 10);
-                return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
-            } else {
-                // Tens only (10, 20, ..., 90)
-                const val = (Math.floor(Math.random() * 9) + 1) * 10;
-                return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
+    _generateChallengeProblem(tier) {
+        if (tier === 0) {
+            // Easy: Single hand 0-9
+            const val = Math.floor(Math.random() * 10);
+            const useTens = val > 0 && Math.random() < 0.3;
+            if (useTens) {
+                return { prompt: window.i18n.t('challenge.promptShow', {value: val * 10}), target: val * 10 };
             }
-        } else if (level === 2) {
-            // Level 2: Combined with no carry/borrow
-            const val = Math.floor(Math.random() * 90) + 10; // 10 to 99
+            return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
+        } else if (tier === 1) {
+            // Medium: Two-hand 0-99, no carry/borrow
+            const val = Math.floor(Math.random() * 90) + 10;
             return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
         } else {
-            // Level 3: Carry/Borrow Required
+            // Hard: Arithmetic with carry/borrow
             const op = Math.random() < 0.5 ? '+' : '-';
             if (op === '+') {
                 let a, b;
                 for (let i = 0; i < 200; i++) {
-                    a = Math.floor(Math.random() * 80) + 10; // 10 to 89
+                    a = Math.floor(Math.random() * 80) + 10;
                     const maxB = 99 - a;
                     if (maxB < 5) continue;
                     b = Math.floor(Math.random() * (maxB - 4)) + 5;
@@ -589,18 +935,18 @@ class UiBindings {
                         return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '+', b}), target: a + b };
                     }
                 }
-                return { prompt: window.i18n.t('challenge.promptFallbackAdd'), target: 85 };
+                return { prompt: window.i18n.t('challenge.promptAnswer', {a: 47, op: '+', b: 38}), target: 85 };
             } else {
                 let a, b;
                 for (let i = 0; i < 200; i++) {
-                    a = Math.floor(Math.random() * 80) + 20; // 20 to 99
+                    a = Math.floor(Math.random() * 80) + 20;
                     b = Math.floor(Math.random() * (a - 9)) + 10;
                     const aR = a % 10, bR = b % 10;
                     if (aR < bR) {
                         return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '−', b}), target: a - b };
                     }
                 }
-                return { prompt: window.i18n.t('challenge.promptFallbackSub'), target: 25 };
+                return { prompt: window.i18n.t('challenge.promptAnswer', {a: 42, op: '−', b: 17}), target: 25 };
             }
         }
     }
@@ -752,6 +1098,13 @@ class UiBindings {
         if (challengeContent) challengeContent.hidden = (s.mode !== 'Challenge');
         if (panelSteps) panelSteps.hidden = (s.mode === 'Challenge' || s.mode === 'Help');
         if (panelControls) panelControls.hidden = (s.mode === 'Challenge' || s.mode === 'Help');
+
+        // Show +/- hand controls in all modes except Help
+        const showHandControls = s.mode !== 'Help';
+        const hcLeft = document.getElementById('handControlsLeft');
+        const hcRight = document.getElementById('handControlsRight');
+        if (hcLeft) hcLeft.hidden = !showHandControls;
+        if (hcRight) hcRight.hidden = !showHandControls;
 
         if (s.mode === 'Tutorial') {
             panelHeading.textContent = window.i18n.t('tab.tutorial');
