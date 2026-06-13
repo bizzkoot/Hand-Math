@@ -64,6 +64,7 @@
   "tour.skip": "Langkau",
   "help.startTour": "Mulakan Tour",
   "panel.question": "▷ {{a}} = ?",
+  "panel.stepCounter": "Langkah {{current}} / {{total}}",
   "panel.arithmeticTitle": "Tambah atau tolak dengan bawa/pinjam",
   "panel.challengeTitle": "Uji kelajuan mengira anda",
   "panel.challengeExplanation": "Guna tangan 3D terus untuk memasukkan nombor!",

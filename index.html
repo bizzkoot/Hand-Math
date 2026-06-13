@@ -124,7 +124,15 @@
             </section>
 
             <aside id="teachingPanel" class="hm-panel" role="region" aria-labelledby="panelHeading">
-                <h2 id="panelHeading" class="hm-panel-heading" data-i18n="panel.tutorialHeading">Tutorial</h2>
+                <header class="hm-panel-head">
+                    <h2 id="panelHeading" class="hm-panel-heading" data-i18n="panel.tutorialHeading">Tutorial</h2>
+                    <div class="hm-op-switch" aria-label="Operation" hidden>
+                        <button id="btnAdd" class="hm-btn hm-btn-tab is-active">+</button>
+                        <button id="btnSub" class="hm-btn hm-btn-tab">−</button>
+                    </div>
+                    <button id="panelInfoBtn" class="hm-panel-info" type="button" aria-label="Show rules" aria-expanded="false">i</button>
+                    <span id="panelStepCounter" class="hm-step-counter" hidden></span>
+                </header>
                 <div id="panelQuestion" class="hm-panel-question" role="heading" aria-level="2">▷ 37 = ?</div>
                 <p id="panelExplanation" class="hm-panel-explanation" data-i18n="panel.explanation">Left = tens, Right = ones. Thumb = five.</p>
                 <ol id="panelSteps" class="hm-steps" role="list" aria-live="polite"></ol>
@@ -136,10 +144,6 @@
                     <span id="answerSlot" class="hm-op hm-answer">?</span>
                 </div>
                 <div id="panelControls" class="hm-panel-controls">
-                    <div class="hm-op-switch" aria-label="Operation" hidden>
-                        <button id="btnAdd" class="hm-btn hm-btn-tab is-active">+</button>
-                        <button id="btnSub" class="hm-btn hm-btn-tab">−</button>
-                    </div>
                     <div class="hm-mode-filter" aria-label="Practice options" hidden>
                         <span class="hm-label" data-i18n="practice.label">Practice:</span>
                         <button id="mfAdd" class="hm-btn hm-btn-tab">+</button>

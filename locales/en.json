@@ -64,6 +64,7 @@
   "tour.skip": "Skip",
   "help.startTour": "Start Tour",
   "panel.question": "▷ {{a}} = ?",
+  "panel.stepCounter": "Step {{current}} / {{total}}",
   "panel.arithmeticTitle": "Add or subtract with carries/borrows",
   "panel.challengeTitle": "Test your counting speed",
   "panel.challengeExplanation": "Use the 3D hands directly to input numbers!",

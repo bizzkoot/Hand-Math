@@ -76,7 +76,9 @@ test.describe('Teaching UI - Challenge Mode & Sound Synthesizer', () => {
             window.handMathApp.updateAllDisplays();
         }, promptTarget);
 
-        // Click Submit to trigger the answer check (no auto-submit)
+        // Click Submit to trigger the answer check. The auto-submit
+        // countdown also fires when the hands match the target, but
+        // clicking Submit cancels the countdown and accepts immediately.
         await page.click('#btnChallengeSubmit');
 
         // Success message should appear (one of the tier feedback messages)

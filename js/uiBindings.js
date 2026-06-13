@@ -129,6 +129,17 @@ class UiBindings {
         this.infoClose = document.getElementById('infoClose');
         this.infoGotIt = document.getElementById('infoGotIt');
         this.helpContent = document.getElementById('helpContent');
+        this.panelInfoBtn = document.getElementById('panelInfoBtn');
+        this.panelStepCounter = document.getElementById('panelStepCounter');
+        this.teachingPanel = document.getElementById('teachingPanel');
+
+        // Per-panel info button (reveals the static rule text on phone).
+        this.panelInfoBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.soundSynth.playClick();
+            const open = this.teachingPanel?.classList.toggle('is-info-open');
+            this.panelInfoBtn.setAttribute('aria-expanded', String(!!open));
+        });
 
         // Practice selectors
         this.mfAdd = document.getElementById('mfAdd');
@@ -199,6 +210,14 @@ class UiBindings {
                 if (!this.configGroup.contains(e.target) && e.target !== this.btnSettings && !this.btnSettings?.contains(e.target)) {
                     this.configGroup.classList.remove('is-open');
                     this.btnSettings?.setAttribute('aria-expanded', 'false');
+                }
+            }
+            // Close the per-panel info popover when the user taps outside
+            // the heading row.
+            if (this.teachingPanel?.classList.contains('is-info-open')) {
+                if (!e.target.closest('.hm-panel-head')) {
+                    this.teachingPanel.classList.remove('is-info-open');
+                    this.panelInfoBtn?.setAttribute('aria-expanded', 'false');
                 }
             }
         });
@@ -392,14 +411,27 @@ class UiBindings {
             totalWindow: 20000,
             goldUntil: 5000,
             silverUntil: 12000,
+            // Auto-submit countdown (when hands reach target, submit after N seconds)
+            autoSubmitSeconds: 3,
+            autoSubmitCountdown: 0,
+            autoSubmitTimer: null,
         };
 
-        // Hook into hand state updates for live feedback only (no auto-submit)
+        // Hook into hand state updates for live feedback and auto-submit countdown
         window.onHandMathStateChange = (state) => {
             if (this.challenge && this.challenge.active && this.challenge.target !== null) {
                 const feedbackEl = document.getElementById('challengeFeedback');
                 if (feedbackEl && !feedbackEl.classList.contains('challenge-feedback-done')) {
                     feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: state.total});
+                }
+                // When the user's hands match the target, start a short
+                // auto-submit countdown shown inside the Submit button. The
+                // user can still click Submit to accept immediately, or move
+                // their hands away to cancel the countdown.
+                if (state.total === this.challenge.target) {
+                    this._startAutoSubmitCountdown();
+                } else {
+                    this._cancelAutoSubmitCountdown();
                 }
             }
         };
@@ -456,6 +488,66 @@ class UiBindings {
         return Infinity;
     }
 
+    // -------- Auto-submit countdown (Challenge mode) --------
+    // When the user's hands reach the challenge target, run a short
+    // countdown shown inside the Submit button, then auto-accept. The
+    // countdown is cancelled if the user moves their hands away, presses
+    // Hint, or presses Submit (which submits immediately).
+
+    _setSubmitButtonText(text) {
+        const btn = document.getElementById('btnChallengeSubmit');
+        if (btn) btn.textContent = text;
+    }
+
+    _refreshSubmitButtonForCountdown() {
+        const n = this.challenge.autoSubmitCountdown;
+        this._setSubmitButtonText(`\u2713 ${n}`);
+    }
+
+    _restoreSubmitButtonText() {
+        this._setSubmitButtonText(window.i18n.t('challenge.submitBtn'));
+    }
+
+    _startAutoSubmitCountdown() {
+        if (this.challenge.autoSubmitTimer) return; // already counting
+        // Don't start the countdown if the user has used a hint, is out of
+        // attempts, or has already submitted the current question.
+        if (this.challenge.hintUsed) return;
+        if (this.challenge.attemptsLeft <= 0) return;
+        if (this.challenge.target === null) return;
+        this.challenge.autoSubmitCountdown = this.challenge.autoSubmitSeconds;
+        this._refreshSubmitButtonForCountdown();
+        this.challenge.autoSubmitTimer = setInterval(() => {
+            this.challenge.autoSubmitCountdown--;
+            if (this.challenge.autoSubmitCountdown <= 0) {
+                this._cancelAutoSubmitCountdown();
+                // Only fire the correct-answer path if the target is still
+                // active (the question may have been advanced in the
+                // meantime by another handler).
+                if (this.challenge.active && this.challenge.target !== null) {
+                    this._onCorrectAnswer();
+                }
+            } else {
+                this._refreshSubmitButtonForCountdown();
+            }
+        }, 1000);
+    }
+
+    _cancelAutoSubmitCountdown() {
+        if (this.challenge.autoSubmitTimer) {
+            clearInterval(this.challenge.autoSubmitTimer);
+            this.challenge.autoSubmitTimer = null;
+        }
+        const wasCounting = this.challenge.autoSubmitCountdown !== 0;
+        this.challenge.autoSubmitCountdown = 0;
+        // Always restore the button text — when the auto-submit tick
+        // reaches 0 the counter is already 0 by the time cancel runs, so
+        // checking the counter alone would leave "✓ 1" stuck on the button.
+        if (wasCounting || document.getElementById('btnChallengeSubmit')?.textContent?.startsWith('\u2713')) {
+            this._restoreSubmitButtonText();
+        }
+    }
+
     _startChallenge() {
         this.soundSynth.playClick();
 
@@ -486,6 +578,7 @@ class UiBindings {
     }
 
     _loadNextChallengeQuestion() {
+        this._cancelAutoSubmitCountdown();
         this.challenge.currentRound++;
 
         // Check if done
@@ -653,6 +746,8 @@ class UiBindings {
     _onCorrectAnswer() {
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = null;
+        // Defensive: cancel any pending auto-submit countdown.
+        this._cancelAutoSubmitCountdown();
 
         this.soundSynth.playChime();
 
@@ -769,6 +864,7 @@ class UiBindings {
     _skipQuestion() {
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = null;
+        this._cancelAutoSubmitCountdown();
 
         const targetVal = this.challenge.target;
         this.challenge.target = null;
@@ -804,7 +900,9 @@ class UiBindings {
 
     _onSubmitAnswer() {
         if (!this.challenge.active || this.challenge.target === null) return;
-        
+        // Manual submit skips the auto-submit countdown.
+        this._cancelAutoSubmitCountdown();
+
         const currentTotal = this._getCurrentHandTotal();
 
         if (currentTotal === this.challenge.target) {
@@ -820,6 +918,8 @@ class UiBindings {
 
         this.soundSynth.playClick();
         this.challenge.hintUsed = true;
+        // No auto-submit after the user has used a hint.
+        this._cancelAutoSubmitCountdown();
 
         const target = this.challenge.target;
         const low = Math.max(0, target - 5);
@@ -838,6 +938,7 @@ class UiBindings {
     _endChallengeSession() {
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = null;
+        this._cancelAutoSubmitCountdown();
         this.challenge.target = null;
 
         document.getElementById('challengePlayScreen').hidden = true;
@@ -894,6 +995,7 @@ class UiBindings {
     _exitChallenge() {
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = null;
+        this._cancelAutoSubmitCountdown();
         this.challenge.active = false;
         this.challenge.target = null;
 
@@ -1063,19 +1165,45 @@ class UiBindings {
         if (this.speedLabel) this.speedLabel.textContent = next.toFixed(1) + '\u00d7';
     }
 
+    _renderPanelHeader(s) {
+        // The "Step n / m" badge in the heading row. Only meaningful for
+        // modes that have a steps list (Tutorial and Arithmetic); the
+        // challenge screen has its own progress UI and Help doesn't
+        // have steps.
+        if (!this.panelStepCounter) return;
+        const show = s.mode === 'Tutorial' || s.mode === 'Arithmetic';
+        this.panelStepCounter.hidden = !show;
+        if (show) {
+            const total = (s.steps && s.steps.length) || 0;
+            const current = total > 0 ? Math.min(s.index + 1, total) : 0;
+            this.panelStepCounter.textContent = window.i18n.t('panel.stepCounter', {
+                current,
+                total
+            });
+        }
+    }
+
     _render() {
         const s = this.o.state();
-        
+
         // Exiting challenge mode checks if switching tab
         if (s.mode !== 'Challenge' && this.challenge && this.challenge.active) {
             this._exitChallenge();
+        }
+
+        // Close the per-panel info popover when the user switches modes,
+        // so the rule text doesn't carry over.
+        if (this._lastMode !== s.mode) {
+            this.teachingPanel?.classList.remove('is-info-open');
+            this.panelInfoBtn?.setAttribute('aria-expanded', 'false');
+            this._lastMode = s.mode;
         }
 
         // Tabs active state
         this.tabTutorial.classList.toggle('is-active', s.mode === 'Tutorial');
         this.tabArithmetic.classList.toggle('is-active', s.mode === 'Arithmetic');
         this.tabHelp.classList.toggle('is-active', s.mode === 'Help');
-        
+
         if (this.tabChallenge) {
             this.tabChallenge.classList.toggle('is-active', s.mode === 'Challenge');
         }
@@ -1093,11 +1221,14 @@ class UiBindings {
         this.btnNew.hidden = (s.mode !== 'Arithmetic');
         arithPrompt.hidden = (s.mode !== 'Arithmetic');
         opSwitcher.hidden = (s.mode !== 'Arithmetic');
-        
+
         if (helpContent) helpContent.hidden = (s.mode !== 'Help');
         if (challengeContent) challengeContent.hidden = (s.mode !== 'Challenge');
         if (panelSteps) panelSteps.hidden = (s.mode === 'Challenge' || s.mode === 'Help');
         if (panelControls) panelControls.hidden = (s.mode === 'Challenge' || s.mode === 'Help');
+
+        // Per-panel step counter (Tutorial + Arithmetic only).
+        this._renderPanelHeader(s);
 
         // Show +/- hand controls in all modes except Help
         const showHandControls = s.mode !== 'Help';
