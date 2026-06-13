@@ -1364,10 +1364,10 @@ class HandMathApp {
 
         const validationStatus = document.getElementById('validation-status');
         if (leftValid && rightValid) {
-            validationStatus.textContent = 'Valid Position';
+            validationStatus.textContent = window.i18n.t('status.positionValid');
             validationStatus.className = 'validation-status valid';
         } else {
-            validationStatus.textContent = 'Invalid Position';
+            validationStatus.textContent = window.i18n.t('status.positionInvalid');
             validationStatus.className = 'validation-status invalid';
         }
     }
@@ -1902,10 +1902,10 @@ window.addEventListener('beforeunload', () => {
             'font-size:14px;display:flex;align-items:center;gap:14px;',
             'animation:swSlideUp 0.4s ease;max-width:90vw;'
         ].join('');
-        banner.innerHTML = '<span>New version available</span>' +
+        banner.innerHTML = '<span>' + window.i18n.t('pwa.updateAvailable') + '</span>' +
             '<button id="sw-update-btn" style="background:#fff;color:#2563eb;border:none;' +
             'padding:6px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">' +
-            'Refresh</button>';
+            window.i18n.t('pwa.refresh') + '</button>';
         document.body.appendChild(banner);
 
         // Inject slide-up keyframe if not present

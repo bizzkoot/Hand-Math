@@ -72,10 +72,39 @@ class I18n {
                 el.textContent = text;
             }
         });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.dataset.i18nTitle;
+            const vars = el.dataset.i18nTitleVars
+                ? this._safeParse(el.dataset.i18nTitleVars) : null;
+            el.title = this.t(key, vars);
+        });
+        document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+            const key = el.dataset.i18nAria;
+            const vars = el.dataset.i18nAriaVars
+                ? this._safeParse(el.dataset.i18nAriaVars) : null;
+            el.setAttribute('aria-label', this.t(key, vars));
+        });
+    }
+
+    _safeParse(s) {
+        try { return JSON.parse(s); } catch (_) { return null; }
     }
 
     _updateHtmlLang() {
         document.documentElement.lang = this._lang === 'ms' ? 'ms-MY' : 'en';
+        this._updateDocumentMeta();
+    }
+
+    _updateDocumentMeta() {
+        const title = this.t('meta.title');
+        if (title && title !== 'meta.title') {
+            document.title = title;
+        }
+        const desc = this.t('meta.description');
+        if (desc && desc !== 'meta.description') {
+            const meta = document.querySelector('meta[name="description"]');
+            if (meta) meta.setAttribute('content', desc);
+        }
     }
 
     _emitChange() {
@@ -99,6 +128,27 @@ const LOCALES = {
         'btn.fullscreenLabel': 'Fullscreen',
         'lang.en': 'English',
         'lang.ms': 'Bahasa Melayu',
+        'lang.selectTitle': 'Language / Bahasa',
+        'aria.modes': 'Modes',
+        'aria.settings': 'Settings',
+        'aria.skinTone': 'Skin tone picker',
+        'aria.skinToneNum': 'Skin tone {{n}}',
+        'aria.customHex': 'Custom hex',
+        'aria.toggleTheme': 'Toggle Theme',
+        'aria.muteSounds': 'Mute Sounds',
+        'aria.unmuteSounds': 'Unmute Sounds',
+        'aria.info': 'Info',
+        'aria.threeDScene': '3D hands',
+        'aria.modelAttribution': 'Model attribution',
+        'aria.handLeftDec': 'Left hand decrement',
+        'aria.handLeftInc': 'Left hand increment',
+        'aria.handRightDec': 'Right hand decrement',
+        'aria.handRightInc': 'Right hand increment',
+        'aria.operation': 'Operation',
+        'aria.showRules': 'Show rules',
+        'aria.practiceOptions': 'Practice options',
+        'aria.level': 'Level',
+        'aria.close': 'Close',
         'loading.text': 'Loading 3D Scene...',
         'credit.handModel': 'Hand model:',
         'scene.resetCamera': 'Reset Camera',
@@ -150,9 +200,12 @@ const LOCALES = {
         'tour.skip': 'Skip',
         'help.startTour': 'Start Tour',
         'panel.question': '\u25b7 {{a}} = ?',
+        'panel.stepCounter': 'Step {{current}} / {{total}}',
         'panel.arithmeticTitle': 'Add or subtract with carries/borrows',
         'panel.challengeTitle': 'Test your counting speed',
         'panel.challengeExplanation': 'Use the 3D hands directly to input numbers!',
+        'meta.title': '3D Hand Math Visualization',
+        'meta.description': '3D Hand Math - Interactive hand-based arithmetic visualization',
         'panel.helpQuestion': 'Use tabs to switch modes. Enter advances steps.',
         'panel.helpExplanation': 'A: Auto, R: Reset, ? : Help.',
         'panel.subInvalid': 'A must be \u2265 B for subtraction. Tip: swap numbers or use addition.',
@@ -228,6 +281,10 @@ const LOCALES = {
         'status.valid': 'Valid',
         'status.invalid': 'Invalid',
         'status.unknown': 'Unknown',
+        'status.positionValid': 'Valid Position',
+        'status.positionInvalid': 'Invalid Position',
+        'pwa.updateAvailable': 'New version available',
+        'pwa.refresh': 'Refresh',
         'error.loadFailed': 'Failed to load 3D scene. Please refresh the page.',
         'error.btnRetry': 'Retry',
         'finger.thumb': 'thumb',
@@ -284,6 +341,27 @@ const LOCALES = {
         'btn.fullscreenLabel': 'Skrin Penuh',
         'lang.en': 'English',
         'lang.ms': 'Bahasa Melayu',
+        'lang.selectTitle': 'Bahasa / Language',
+        'aria.modes': 'Mod',
+        'aria.settings': 'Tetapan',
+        'aria.skinTone': 'Pemilih warna kulit',
+        'aria.skinToneNum': 'Warna kulit {{n}}',
+        'aria.customHex': 'Hex tersuai',
+        'aria.toggleTheme': 'Togol Tema',
+        'aria.muteSounds': 'Senyapkan Bunyi',
+        'aria.unmuteSounds': 'Bunyikan Bunyi',
+        'aria.info': 'Info',
+        'aria.threeDScene': 'Tangan 3D',
+        'aria.modelAttribution': 'Atribusi model',
+        'aria.handLeftDec': 'Kurangi tangan kiri',
+        'aria.handLeftInc': 'Tambah tangan kiri',
+        'aria.handRightDec': 'Kurangi tangan kanan',
+        'aria.handRightInc': 'Tambah tangan kanan',
+        'aria.operation': 'Operasi',
+        'aria.showRules': 'Tunjuk peraturan',
+        'aria.practiceOptions': 'Pilihan latihan',
+        'aria.level': 'Tahap',
+        'aria.close': 'Tutup',
         'loading.text': 'Memuatkan Pemandangan 3D...',
         'credit.handModel': 'Model tangan:',
         'scene.resetCamera': 'Set Semula Kamera',
@@ -335,9 +413,12 @@ const LOCALES = {
         'tour.skip': 'Langkau',
         'help.startTour': 'Mulakan Tour',
         'panel.question': '\u25b7 {{a}} = ?',
+        'panel.stepCounter': 'Langkah {{current}} / {{total}}',
         'panel.arithmeticTitle': 'Tambah atau tolak dengan bawa/pinjam',
         'panel.challengeTitle': 'Uji kelajuan mengira anda',
         'panel.challengeExplanation': 'Guna tangan 3D terus untuk memasukkan nombor!',
+        'meta.title': 'Visualisasi Matematik Tangan 3D',
+        'meta.description': 'Matematik Tangan 3D - Visualisasi aritmetik interaktif berasaskan tangan',
         'panel.helpQuestion': 'Guna tab untuk tukar mod. Enter majukan langkah.',
         'panel.helpExplanation': 'A: Auto, R: Set Semula, ? : Bantuan.',
         'panel.subInvalid': 'A mesti \u2265 B untuk penolakan. Tip: tukar nombor atau guna penambahan.',
@@ -413,6 +494,10 @@ const LOCALES = {
         'status.valid': 'Sah',
         'status.invalid': 'Tidak Sah',
         'status.unknown': 'Tidak Diketahui',
+        'status.positionValid': 'Kedudukan Sah',
+        'status.positionInvalid': 'Kedudukan Tidak Sah',
+        'pwa.updateAvailable': 'Versi baru tersedia',
+        'pwa.refresh': 'Muat Semula',
         'error.loadFailed': 'Gagal memuatkan pemandangan 3D. Sila muat semula halaman.',
         'error.btnRetry': 'Cuba Semula',
         'finger.thumb': 'ibu jari',

@@ -234,6 +234,7 @@ class UiBindings {
             const muted = this.soundSynth.muted;
             this.soundSynth.setMuted(!muted);
             this.btnSound.setAttribute('aria-pressed', String(!muted));
+            this._updateSoundButtonLabels();
             const soundOnSvg = this.btnSound.querySelector('.sound-on');
             const soundOffSvg = this.btnSound.querySelector('.sound-off');
             if (soundOnSvg && soundOffSvg) {
@@ -252,6 +253,11 @@ class UiBindings {
                 this.soundSynth.playClick();
             }
         });
+
+        if (this.btnSound) {
+            this._updateSoundButtonLabels();
+            window.i18n.onChange(() => this._updateSoundButtonLabels());
+        }
 
         this.btnAdd.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setOperation('+'); });
         this.btnSub.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setOperation('-'); });
@@ -506,6 +512,17 @@ class UiBindings {
 
     _restoreSubmitButtonText() {
         this._setSubmitButtonText(window.i18n.t('challenge.submitBtn'));
+    }
+
+    // Update the sound button's aria-label / title to reflect the current
+    // mute state and current language. Called after toggle and on lang change.
+    _updateSoundButtonLabels() {
+        if (!this.btnSound) return;
+        const muted = this.soundSynth.muted;
+        const key = muted ? 'aria.unmuteSounds' : 'aria.muteSounds';
+        const text = window.i18n.t(key);
+        this.btnSound.setAttribute('aria-label', text);
+        this.btnSound.setAttribute('title', text);
     }
 
     _startAutoSubmitCountdown() {

@@ -29,7 +29,7 @@
         <header id="header" class="hm-header" role="banner">
             <div class="hm-header-left">
                 <h1 id="title" class="hm-title" data-i18n="header.title">Hand Math — Count to 99</h1>
-                <div id="modeTabs" class="hm-tabs" role="tablist" aria-label="Modes">
+                <div id="modeTabs" class="hm-tabs" role="tablist" data-i18n-aria="aria.modes">
                     <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial" data-i18n="tab.tutorial">Tutorial</button>
                     <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic" data-i18n="tab.arithmetic">Arithmetic</button>
                     <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge" data-i18n="tab.challenge">Challenge</button>
@@ -37,7 +37,7 @@
                 </div>
             </div>
             <div class="hm-header-right">
-                <button id="btnSettings" class="hm-btn hm-btn-icon" aria-label="Settings" title="Settings" aria-expanded="false">
+                <button id="btnSettings" class="hm-btn hm-btn-icon" data-i18n-aria="aria.settings" data-i18n-title="aria.settings" aria-expanded="false">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>
                 <div id="configGroup" class="hm-config-group">
@@ -45,41 +45,41 @@
                         <option value="en" data-i18n="lang.en">English</option>
                         <option value="ms" data-i18n="lang.ms">Bahasa Melayu</option>
                     </select>
-                    <div id="hmSkin" class="hm-skin" aria-label="Skin tone picker">
-                        <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" aria-label="Skin tone 1"></button>
-                        <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" aria-label="Skin tone 2"></button>
-                        <button class="hm-swatch" data-hex="#c79a6b" title="#c79a6b" aria-label="Skin tone 3"></button>
-                        <button class="hm-swatch" data-hex="#a47250" title="#a47250" aria-label="Skin tone 4"></button>
-                        <button class="hm-swatch" data-hex="#7a4f35" title="#7a4f35" aria-label="Skin tone 5"></button>
-                        <button class="hm-swatch" data-hex="#4d3325" title="#4d3325" aria-label="Skin tone 6"></button>
-                        <input id="hmSkinHex" class="hm-hex" type="text" inputmode="text" spellcheck="false" placeholder="#hex" aria-label="Custom hex" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxlength="7" />
+                    <div id="hmSkin" class="hm-skin" data-i18n-aria="aria.skinTone">
+                        <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":1}'></button>
+                        <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":2}'></button>
+                        <button class="hm-swatch" data-hex="#c79a6b" title="#c79a6b" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":3}'></button>
+                        <button class="hm-swatch" data-hex="#a47250" title="#a47250" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":4}'></button>
+                        <button class="hm-swatch" data-hex="#7a4f35" title="#7a4f35" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":5}'></button>
+                        <button class="hm-swatch" data-hex="#4d3325" title="#4d3325" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":6}'></button>
+                        <input id="hmSkinHex" class="hm-hex" type="text" inputmode="text" spellcheck="false" placeholder="#hex" data-i18n-aria="aria.customHex" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxlength="7" />
                     </div>
-                    <button id="btnTheme" class="hm-btn hm-btn-icon" aria-label="Toggle Theme" title="Toggle Theme">
+                    <button id="btnTheme" class="hm-btn hm-btn-icon" data-i18n-aria="aria.toggleTheme" data-i18n-title="aria.toggleTheme">
                         <svg class="theme-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                         <svg class="theme-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                     </button>
-                    <button id="btnSound" class="hm-btn hm-btn-icon" aria-label="Mute Sounds" title="Mute Sounds" aria-pressed="true">
+                    <button id="btnSound" class="hm-btn hm-btn-icon" aria-pressed="true">
                         <svg class="sound-on" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                         <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
                     </button>
-                    <button id="btnInfo" class="hm-btn hm-btn-icon" aria-label="Info">i</button>
-                    <button id="btnFullscreen" class="hm-btn hm-btn-icon" aria-label="Fullscreen">□</button>
+                    <button id="btnInfo" class="hm-btn hm-btn-icon" data-i18n-aria="aria.info">i</button>
+                    <button id="btnFullscreen" class="hm-btn hm-btn-icon" data-i18n-aria="btn.fullscreenLabel">□</button>
                 </div>
                 <button id="btnReset" class="hm-btn" aria-keyshortcuts="R" data-i18n="btn.reset">Reset</button>
                 <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false" data-i18n="btn.auto">Auto ▶</button>
                 <span id="speedGroup" class="hm-speed-group" hidden>
-                    <button id="btnSpeedDown" class="hm-btn hm-btn-icon" aria-label="Slower">−</button>
+                    <button id="btnSpeedDown" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedDownLabel">−</button>
                     <span id="speedLabel" class="hm-speed-label">1.0×</span>
-                    <button id="btnSpeedUp" class="hm-btn hm-btn-icon" aria-label="Faster">+</button>
+                    <button id="btnSpeedUp" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedUpLabel">+</button>
                 </span>
-                <button id="btnNarrate" class="hm-btn hm-btn-icon" aria-pressed="false" title="Narrate steps aloud" hidden aria-label="Toggle narration">♪</button>
+                <button id="btnNarrate" class="hm-btn hm-btn-icon" aria-pressed="false" data-i18n-title="btn.narrateTitle" hidden data-i18n-aria="btn.narrateLabel">♪</button>
             </div>
         </header>
 
         <div id="content" class="hm-content" role="main">
-            <section id="scene" class="hm-scene" aria-label="3D hands">
+            <section id="scene" class="hm-scene" data-i18n-aria="aria.threeDScene">
                 <div id="scene-container" class="scene-container">
-                    <canvas id="three-canvas" aria-label="3D hands"></canvas>
+                    <canvas id="three-canvas" data-i18n-aria="aria.threeDScene"></canvas>
                     <div id="loading-overlay" class="loading-overlay">
                         <div class="loader">
                             <div class="loader-spinner"></div>
@@ -87,20 +87,20 @@
                         </div>
                     </div>
                     <div class="scene-controls">
-                        <button id="reset-camera" class="control-btn" title="Reset Camera">
+                        <button id="reset-camera" class="control-btn" data-i18n-title="scene.resetCamera">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                                 <path d="M12 6v6l4 2"/>
                             </svg>
                         </button>
-                        <button id="toggle-wireframe" class="control-btn" title="Toggle Wireframe">
+                        <button id="toggle-wireframe" class="control-btn" data-i18n-title="scene.toggleWireframe">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                             </svg>
                         </button>
                     </div>
                     <!-- Bottom-left attribution overlay -->
-                    <div id="assetCredits" class="hm-credits" role="note" aria-label="Model attribution">
+                    <div id="assetCredits" class="hm-credits" role="note" data-i18n-aria="aria.modelAttribution">
                         <span data-i18n="credit.handModel">Hand model:</span> <a href="https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e" target="_blank" rel="noopener" id="creditTitle">Rigged Hand</a>
                         by <a href="https://sketchfab.com/elenaferfor" target="_blank" rel="noopener" id="creditAuthor">Elena FF</a>
                         on <a href="https://sketchfab.com" target="_blank" rel="noopener">Sketchfab</a> —
@@ -112,12 +112,12 @@
                     <div id="halos-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5;"></div>
                     <div id="handControlsContainer" class="hand-controls-container">
                         <div id="handControlsLeft" class="hand-controls hand-controls-left" hidden>
-                            <button class="hand-control-btn hand-control-minus" data-hand="left" aria-label="Left hand decrement">−</button>
-                            <button class="hand-control-btn hand-control-plus" data-hand="left" aria-label="Left hand increment">+</button>
+                            <button class="hand-control-btn hand-control-minus" data-hand="left" data-i18n-aria="aria.handLeftDec">−</button>
+                            <button class="hand-control-btn hand-control-plus" data-hand="left" data-i18n-aria="aria.handLeftInc">+</button>
                         </div>
                         <div id="handControlsRight" class="hand-controls hand-controls-right" hidden>
-                            <button class="hand-control-btn hand-control-minus" data-hand="right" aria-label="Right hand decrement">−</button>
-                            <button class="hand-control-btn hand-control-plus" data-hand="right" aria-label="Right hand increment">+</button>
+                            <button class="hand-control-btn hand-control-minus" data-hand="right" data-i18n-aria="aria.handRightDec">−</button>
+                            <button class="hand-control-btn hand-control-plus" data-hand="right" data-i18n-aria="aria.handRightInc">+</button>
                         </div>
                     </div>
                 </div>
@@ -126,11 +126,11 @@
             <aside id="teachingPanel" class="hm-panel" role="region" aria-labelledby="panelHeading">
                 <header class="hm-panel-head">
                     <h2 id="panelHeading" class="hm-panel-heading" data-i18n="panel.tutorialHeading">Tutorial</h2>
-                    <div class="hm-op-switch" aria-label="Operation" hidden>
+                    <div class="hm-op-switch" data-i18n-aria="aria.operation" hidden>
                         <button id="btnAdd" class="hm-btn hm-btn-tab is-active">+</button>
                         <button id="btnSub" class="hm-btn hm-btn-tab">−</button>
                     </div>
-                    <button id="panelInfoBtn" class="hm-panel-info" type="button" aria-label="Show rules" aria-expanded="false">i</button>
+                    <button id="panelInfoBtn" class="hm-panel-info" type="button" data-i18n-aria="aria.showRules" aria-expanded="false">i</button>
                     <span id="panelStepCounter" class="hm-step-counter" hidden></span>
                 </header>
                 <div id="panelQuestion" class="hm-panel-question" role="heading" aria-level="2">▷ 37 = ?</div>
@@ -144,20 +144,20 @@
                     <span id="answerSlot" class="hm-op hm-answer">?</span>
                 </div>
                 <div id="panelControls" class="hm-panel-controls">
-                    <div class="hm-mode-filter" aria-label="Practice options" hidden>
+                    <div class="hm-mode-filter" data-i18n-aria="aria.practiceOptions" hidden>
                         <span class="hm-label" data-i18n="practice.label">Practice:</span>
                         <button id="mfAdd" class="hm-btn hm-btn-tab">+</button>
                         <button id="mfSub" class="hm-btn hm-btn-tab">−</button>
                         <button id="mfBoth" class="hm-btn hm-btn-tab is-active">±</button>
-                        <select id="levelSel" class="hm-level" aria-label="Level">
+                        <select id="levelSel" class="hm-level" data-i18n-aria="aria.level">
                             <option value="1" data-i18n="level.1">Level 1 (no carry/borrow)</option>
                             <option value="2" selected data-i18n="level.2">Level 2 (mixed)</option>
                             <option value="3" data-i18n="level.3">Level 3 (hard)</option>
                         </select>
                     </div>
                     <div class="hm-step-controls">
-                        <button id="btnPrev" class="hm-btn" disabled title="Back: restore previous finger state" aria-label="Back (restore previous finger state)" data-i18n="btn.prev">← Back</button>
-                        <button id="btnNext" class="hm-btn hm-btn-primary" title="Next: run current step" aria-label="Next (run current step)" data-i18n="btn.next">Next →</button>
+                        <button id="btnPrev" class="hm-btn" disabled data-i18n-title="panel.prevTitle" data-i18n-aria="panel.prevLabel" data-i18n="btn.prev">← Back</button>
+                        <button id="btnNext" class="hm-btn hm-btn-primary" data-i18n-title="panel.nextTitle" data-i18n-aria="panel.nextLabel" data-i18n="btn.next">Next →</button>
                         <button id="btnNew" class="hm-btn" hidden data-i18n="btn.newProblem">New Problem</button>
                         <span id="autoStatus" class="hm-auto" hidden data-i18n="auto.off">Auto: Off</span>
                     </div>
@@ -178,7 +178,7 @@
                     </div>
                     <div id="challengePlayScreen" class="challenge-screen" hidden>
                         <div class="challenge-header-row">
-                            <div id="challengeTierBadge" class="challenge-tier-badge challenge-tier-gold" title="Gold">
+                            <div id="challengeTierBadge" class="challenge-tier-badge challenge-tier-gold" data-i18n-title="challenge.tierGold">
                                 <span id="challengeTierIcon" class="challenge-tier-icon">✦</span>
                             </div>
                             <div class="challenge-header-center">
@@ -225,7 +225,7 @@
             <div class="hm-modal-card">
                 <div class="hm-modal-head">
                     <h3 id="infoTitle" data-i18n="modal.infoTitle">How to read Hand Math</h3>
-                    <button id="infoClose" class="hm-btn hm-btn-icon" aria-label="Close">✕</button>
+                    <button id="infoClose" class="hm-btn hm-btn-icon" data-i18n-aria="aria.close">✕</button>
                 </div>
                 <div class="hm-modal-body">
                     <p data-i18n="modal.infoBody1">Thumb counts as five. Left hand = tens (0–90). Right hand = ones (0–9).</p>
