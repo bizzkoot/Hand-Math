@@ -12,7 +12,13 @@ class StepEngine {
 
     async runStep(step) {
         // step: { id, target:{left,right}, animate, cue, narration, durationMs }
-        if (step.cue) this.adapter.emphasize(step.cue === 'highlight-left' ? 'left' : step.cue === 'highlight-right' ? 'right' : 'left', step.cue.includes('carry') ? 'carry' : step.cue.includes('borrow') ? 'borrow' : 'highlight');
+        if (step.cue) {
+            const isLeft = step.cue === 'highlight-left' || step.cue === 'carry';
+            const isRight = step.cue === 'highlight-right' || step.cue === 'borrow';
+            const hand = isLeft ? 'left' : isRight ? 'right' : 'left';
+            const type = step.cue.includes('carry') ? 'carry' : step.cue.includes('borrow') ? 'borrow' : 'highlight';
+            this.adapter.emphasize(hand, type);
+        }
 
         // Per-finger halos removed for simplicity
 
@@ -26,7 +32,7 @@ class StepEngine {
 
         if (step.animate === 'count-up' || step.animate === 'count-down') {
             // Prefer ones hand for count in arithmetic; fall back to direct target
-            const hand = step.cue === 'highlight-left' ? 'left' : 'right';
+            const hand = (step.cue === 'highlight-left' || step.cue === 'carry') ? 'left' : 'right';
             const current = this._currentDigit(hand);
             const delta = (step.animate === 'count-up') ? (step.target[hand] - current) : (current - step.target[hand]);
             if (delta !== 0) await this.adapter.playCount({ hand, by: Math.sign(delta) * Math.abs(delta) });
@@ -37,7 +43,7 @@ class StepEngine {
             right: step.target.right,
             mode: step.animate === 'instant' ? 'instant' : 'step',
             durationMs: step.durationMs ?? 450,
-            highlight: step.cue === 'highlight-left' ? 'left' : step.cue === 'highlight-right' ? 'right' : null
+            highlight: (step.cue === 'highlight-left' || step.cue === 'carry') ? 'left' : (step.cue === 'highlight-right' || step.cue === 'borrow') ? 'right' : null
         });
     }
 

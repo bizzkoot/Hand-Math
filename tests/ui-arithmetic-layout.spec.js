@@ -29,10 +29,10 @@ test.describe('Teaching UI - Phone-portrait panel layout (Tutorial / Arithmetic)
       await expect(page.locator('#panelQuestion')).toBeHidden();
       await expect(page.locator('#panelExplanation')).toBeHidden();
 
-      // (2) The step counter is visible and shows "Step 1 / N" (Tutorial has 3 steps)
+      // (2) The step counter is visible and shows "Step 1 / N" (Tutorial has 4 steps)
       const counter = page.locator('#panelStepCounter');
       await expect(counter).toBeVisible();
-      await expect(counter).toHaveText(/Step\s+1\s*\/\s*3/);
+      await expect(counter).toHaveText(/Step\s+1\s*\/\s*4/);
 
       // (3) The info button is visible
       await expect(page.locator('#panelInfoBtn')).toBeVisible();

@@ -91,6 +91,14 @@ class UiBindings {
         this._initChallenge();
         this._render();
         this._unsub = this.o.onChange(() => this._render());
+
+        // React to language changes: rebuild step text in the new language
+        if (window.i18n) {
+            window.i18n.onChange(() => {
+                const { a, b, op } = this.o.problem;
+                this.o.setProblem(a, b, op);
+            });
+        }
     }
 
     _wire() {
@@ -1311,11 +1319,15 @@ class UiBindings {
                 const sub = document.createElement('div');
                 sub.textContent = step.narration || '';
                 li.appendChild(sub);
+                if (step.rule) {
+                    const ruleEl = document.createElement('div');
+                    ruleEl.className = 'hm-step-rule';
+                    ruleEl.textContent = step.rule;
+                    li.appendChild(ruleEl);
+                }
                 if (step.explain) {
                     const hint = document.createElement('div');
                     hint.className = 'hm-step-hint';
-                    hint.style.color = 'var(--hm-muted)';
-                    hint.style.fontSize = '12px';
                     hint.textContent = step.explain;
                     li.appendChild(hint);
                 }
@@ -1325,6 +1337,23 @@ class UiBindings {
                     ulDetails.style.padding = '0';
                     step.details.forEach(d => { const liD = document.createElement('li'); liD.textContent = d; ulDetails.appendChild(liD); });
                     li.appendChild(ulDetails);
+                }
+                if (step.running) {
+                    const runningEl = document.createElement('div');
+                    runningEl.className = 'hm-step-running';
+                    runningEl.textContent = step.running;
+                    li.appendChild(runningEl);
+                }
+                if (step.why) {
+                    const detailsEl = document.createElement('details');
+                    detailsEl.className = 'hm-step-why';
+                    const summaryEl = document.createElement('summary');
+                    summaryEl.textContent = window.i18n.t('panel.whyWorks');
+                    detailsEl.appendChild(summaryEl);
+                    const contentEl = document.createElement('div');
+                    contentEl.textContent = step.why;
+                    detailsEl.appendChild(contentEl);
+                    li.appendChild(detailsEl);
                 }
                 panelSteps.appendChild(li);
             });
@@ -1424,8 +1453,10 @@ class UiBindings {
             if (currentStep) {
                 const parts = [];
                 if (currentStep.narration) parts.push(currentStep.narration);
+                if (currentStep.rule) parts.push(currentStep.rule);
                 if (currentStep.explain) parts.push(currentStep.explain);
                 if (Array.isArray(currentStep.details)) parts.push(...currentStep.details);
+                if (currentStep.running) parts.push(currentStep.running);
                 const text = parts.join('. ');
                 if (text) await this._speak(text);
             }

@@ -14,8 +14,8 @@ test.describe('Teaching UI - Tutorial', () => {
     // Switch to Tutorial explicitly
     await page.click('#tabTutorial');
 
-    // Ensure three steps rendered
-    await expect(page.locator('#panelSteps .hm-step')).toHaveCount(3);
+    // Ensure four steps rendered (place-value intro + tens + ones + result)
+    await expect(page.locator('#panelSteps .hm-step')).toHaveCount(4);
 
     // Step 1 current
     await expect(page.locator('#panelSteps .hm-step').first()).toHaveAttribute('aria-current', 'step');
