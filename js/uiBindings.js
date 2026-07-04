@@ -1312,6 +1312,16 @@ class UiBindings {
                 li.className = 'hm-step' + (i < s.index ? ' is-complete' : i === s.index ? ' is-current' : '');
                 li.setAttribute('role', 'listitem');
                 if (i === s.index) li.setAttribute('aria-current', 'step');
+                
+                const ariaParts = [];
+                if (step.title) ariaParts.push(step.title);
+                if (step.narration) ariaParts.push(step.narration);
+                if (step.rule) ariaParts.push(step.rule);
+                if (step.explain) ariaParts.push(step.explain);
+                if (Array.isArray(step.details)) ariaParts.push(...step.details);
+                if (step.why) ariaParts.push(step.why);
+                if (step.running) ariaParts.push(step.running);
+                if (ariaParts.length > 0) li.setAttribute('aria-label', ariaParts.join('. '));
                 const title = document.createElement('div');
                 title.style.fontWeight = '600';
                 title.textContent = step.title || step.narration || step.id;
@@ -1353,6 +1363,7 @@ class UiBindings {
                     const contentEl = document.createElement('div');
                     contentEl.textContent = step.why;
                     detailsEl.appendChild(contentEl);
+                    
                     li.appendChild(detailsEl);
                 }
                 panelSteps.appendChild(li);
@@ -1453,9 +1464,6 @@ class UiBindings {
             if (currentStep) {
                 const parts = [];
                 if (currentStep.narration) parts.push(currentStep.narration);
-                if (currentStep.rule) parts.push(currentStep.rule);
-                if (currentStep.explain) parts.push(currentStep.explain);
-                if (Array.isArray(currentStep.details)) parts.push(...currentStep.details);
                 if (currentStep.running) parts.push(currentStep.running);
                 const text = parts.join('. ');
                 if (text) await this._speak(text);

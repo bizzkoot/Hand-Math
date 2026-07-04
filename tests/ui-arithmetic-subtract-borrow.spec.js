@@ -25,11 +25,11 @@ test.describe('Teaching UI - Arithmetic (− borrow)', () => {
         await page.click('#btnNext');
         // Cue is transient (~800ms); assert quickly
         await expect(page.locator('#carryBorrowCue')).toHaveText('Borrow 1 ten', { timeout: 1200 });
-        await page.evaluate(() => TEST_API.waitForSettled(2000));
+        await page.evaluate(() => TEST_API.waitForSettled(300));
         break;
       }
       await page.click('#btnNext');
-      await page.evaluate(() => TEST_API.waitForSettled(2000));
+      await page.evaluate(() => TEST_API.waitForSettled(300));
     }
 
     // Complete remaining steps
@@ -37,7 +37,7 @@ test.describe('Teaching UI - Arithmetic (− borrow)', () => {
       const currentId = await page.evaluate(() => TEST_API.getState().step?.id || null);
       if (!currentId) break;
       await page.click('#btnNext');
-      await page.evaluate(() => TEST_API.waitForSettled(2000));
+      await page.evaluate(() => TEST_API.waitForSettled(300));
     }
 
     // Final digits 2|5 (25)

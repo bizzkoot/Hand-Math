@@ -8,7 +8,7 @@ class ArithmeticBuilder {
 
     _classifyOnesAdd(aR, bR) {
         const i = this._i18n();
-        if (bR === 0) return { kind: 'tens-only', c5: 0, c10: 0, rule: null, why: null };
+        if (bR === 0) return { kind: 'tens-only', c5: 0, c10: 0, rule: i.t('rule.tensOnly'), why: null };
         const c5 = 5 - bR;
         const c10 = 10 - bR;
         const lowerBeads = aR % 5;
@@ -38,7 +38,7 @@ class ArithmeticBuilder {
 
     _classifyOnesSub(aR, bR) {
         const i = this._i18n();
-        if (bR === 0) return { kind: 'tens-only', c5: 0, c10: 0, rule: null, why: null };
+        if (bR === 0) return { kind: 'tens-only', c5: 0, c10: 0, rule: i.t('rule.tensOnly'), why: null };
         const c5 = 5 - bR;
         const c10 = 10 - bR;
         if (aR >= bR) {
@@ -78,6 +78,7 @@ class ArithmeticBuilder {
         return [
             {
                 id: 't-place-value',
+                title: i.t('tutorial.placeValueTitle'),
                 narration: i.t('narration.number', {value: number}),
                 rule: i.t('tutorial.placeValue'),
                 target: { left: 0, right: 0 },
@@ -139,8 +140,9 @@ class ArithmeticBuilder {
             if (cls.kind === 'tens-only') {
                 steps.push({
                     id: 'a-ones-none',
+                    title: i.t('step.addOnes'),
                     narration: i.t('narration.addOnes', {aR, bR, onesSum: aR}),
-                    rule: null,
+                    rule: cls.rule,
                     target: { left: aL, right: aR },
                     animate: 'instant',
                     cue: null,
@@ -217,7 +219,7 @@ class ArithmeticBuilder {
                 i.t('narration.removeComplement', {complement: c10})
             ],
             why: i.t('why.tenCompAdd', {bR, c10}),
-            running: this._runningValue(aL, aR) + ' (ones overflow)'
+            running: this._runningValue(aL, aR) + ' ' + i.t('running.overflow')
         });
 
         const hintSub = this._deltaHint('right', aR, rightAfter, i.t('explain.rightSubComplement', {aR, complement: c10, rightAfter}));
@@ -317,7 +319,7 @@ class ArithmeticBuilder {
                 ? i.t('explain.subTensAfterBorrow', {leftAfterBorrow: left})
                 : i.t('narration.leftBecomesTens', {newLeft});
             const hintL = bL === 0
-                ? i.t('explain.subTensAfterBorrow', {leftAfterBorrow: left})
+                ? i.t('explain.subTensAfterBorrowHint')
                 : this._deltaHint('left', left, newLeft, i.t('explain.subtractTens', {bL}));
             steps.push({
                 id: 's-sub-tens',
@@ -337,7 +339,9 @@ class ArithmeticBuilder {
             if (cls.kind === 'tens-only') {
                 steps.push({
                     id: 's-ones-none',
+                    title: i.t('step.subOnes'),
                     narration: i.t('narration.subOnes', {right: aR, bR, newRight: aR}),
+                    rule: cls.rule,
                     target: { left, right: aR },
                     animate: 'instant',
                     cue: null
