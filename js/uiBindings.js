@@ -124,6 +124,8 @@ class UiBindings {
         this.btnSound = document.getElementById('btnSound');
         this.btnSettings = document.getElementById('btnSettings');
         this.configGroup = document.getElementById('configGroup');
+        this.btnScreenWake = document.getElementById('btnScreenWake');
+        this._wakeLock = null;
         this.btnAdd = document.getElementById('btnAdd');
         this.btnSub = document.getElementById('btnSub');
         this.autoStatus = document.getElementById('autoStatus');
@@ -265,6 +267,16 @@ class UiBindings {
         if (this.btnSound) {
             this._updateSoundButtonLabels();
             window.i18n.onChange(() => this._updateSoundButtonLabels());
+        }
+
+        // Screen wake lock
+        this.btnScreenWake?.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            this._toggleScreenWake();
+        });
+        this._initScreenWake();
+        if (this.btnScreenWake && window.i18n) {
+            window.i18n.onChange(() => this._updateScreenWakeButton());
         }
 
         this.btnAdd.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setOperation('+'); });
@@ -1508,6 +1520,133 @@ class UiBindings {
         if (window.handMathApp && typeof window.handMathApp.onWindowResize === 'function') {
             setTimeout(() => window.handMathApp.onWindowResize(), 100);
         }
+    }
+
+    _initScreenWake() {
+        const stored = localStorage.getItem('hm-screen-wake');
+        if (stored === 'true') {
+            this._screenWakeEnabled = true;
+            this._requestWakeLock();
+            this._updateScreenWakeButton();
+        } else {
+            this._screenWakeEnabled = false;
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this._screenWakeEnabled) {
+                this._requestWakeLock();
+            }
+        });
+    }
+
+    _updateScreenWakeButton() {
+        if (!this.btnScreenWake) return;
+        const key = this._screenWakeEnabled ? 'aria.screenWakeOn' : 'aria.screenWakeOff';
+        const label = window.i18n ? window.i18n.t(key) : key;
+        this.btnScreenWake.setAttribute('aria-label', label);
+        this.btnScreenWake.classList.toggle('is-active', !!this._screenWakeEnabled);
+        if (window.i18n) {
+            this.btnScreenWake.dataset.i18nAria = key;
+        }
+    }
+
+    async _requestWakeLock() {
+        let acquired = false;
+        if ('wakeLock' in navigator) {
+            try {
+                if (this._wakeLock) {
+                    try { this._wakeLock.release(); } catch (_) {}
+                    this._wakeLock = null;
+                }
+                this._wakeLock = await navigator.wakeLock.request('screen');
+                this._wakeLock.addEventListener('release', () => {
+                    if (!this._screenWakeEnabled) return;
+                    if (document.visibilityState === 'visible') {
+                        this._requestWakeLock();
+                    }
+                });
+                acquired = true;
+            } catch (_) {
+                // Native lock rejected (e.g. iOS PWA <18.4 standalone mode)
+            }
+        }
+        if (!acquired) {
+            this._startIOSWakeVideo();
+        }
+    }
+
+    async _releaseWakeLock() {
+        if (this._wakeLock) {
+            try { await this._wakeLock.release(); } catch (_) {}
+            this._wakeLock = null;
+        }
+        this._stopIOSWakeVideo();
+    }
+
+    _generateSilentVideoURL() {
+        return new Promise((resolve) => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 2;
+                canvas.height = 2;
+                const stream = canvas.captureStream(1);
+                const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+                const mimeType = types.find(t => MediaRecorder.isTypeSupported(t));
+                if (!mimeType) { resolve(null); return; }
+                const recorder = new MediaRecorder(stream, { mimeType });
+                const chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    resolve(URL.createObjectURL(new Blob(chunks, { type: mimeType })));
+                };
+                recorder.start(100);
+                setTimeout(() => { try { recorder.stop(); } catch (_) { resolve(null); } }, 200);
+            } catch (_) {
+                resolve(null);
+            }
+        });
+    }
+
+    async _startIOSWakeVideo() {
+        if (this._wakeVideo) return;
+        try {
+            const url = await this._generateSilentVideoURL();
+            if (!url) return;
+            const video = document.createElement('video');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
+            video.setAttribute('loop', '');
+            video.setAttribute('muted', '');
+            video.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.01;pointer-events:none;z-index:-1';
+            video.disablePictureInPicture = true;
+            video.src = url;
+            video.load();
+            await video.play();
+            this._wakeVideo = video;
+        } catch (_) {
+            this._stopIOSWakeVideo();
+        }
+    }
+
+    _stopIOSWakeVideo() {
+        if (this._wakeVideo) {
+            try { this._wakeVideo.pause(); } catch (_) {}
+            this._wakeVideo.removeAttribute('src');
+            try { this._wakeVideo.load(); } catch (_) {}
+            this._wakeVideo.remove();
+            this._wakeVideo = null;
+        }
+    }
+
+    async _toggleScreenWake() {
+        this._screenWakeEnabled = !this._screenWakeEnabled;
+        localStorage.setItem('hm-screen-wake', String(this._screenWakeEnabled));
+        if (this._screenWakeEnabled) {
+            await this._requestWakeLock();
+        } else {
+            await this._releaseWakeLock();
+        }
+        this._updateScreenWakeButton();
     }
 }
 

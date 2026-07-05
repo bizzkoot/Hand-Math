@@ -216,6 +216,7 @@
 .hm-btn-icon { width:36px; height:32px; display:flex; align-items:center; justify-content:center; padding: 0; }
 .hm-btn-primary { background: var(--hm-accent); color:#ffffff; border-color: var(--hm-accent); font-weight:600; }
 .hm-btn-primary:hover { background: var(--hm-accent); border-color: var(--hm-accent); opacity: 0.95; color: #ffffff; }
+.hm-btn-icon.is-active { background: var(--tab-active-bg); border-color: var(--hm-accent); }
 .hm-btn-tab { padding:4px 8px; }
 
 /* Sun/Moon Toggle SVGs */
