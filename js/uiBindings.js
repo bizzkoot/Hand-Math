@@ -1185,7 +1185,12 @@ class UiBindings {
                 this.btnNarrate.setAttribute('aria-pressed', 'true');
             }
         }
-        if (next) this._startAutoLoop(); else this._stopAutoLoop();
+        if (next) {
+            this._startAutoLoop();
+        } else {
+            this._stopAutoLoop();
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        }
     }
 
     _adjustSpeed(dir) {
@@ -1430,11 +1435,11 @@ class UiBindings {
         }
         const utterance = new SpeechSynthesisUtterance(ttsText);
         utterance.lang = isMs ? 'ms-MY' : 'en-US';
-        utterance.rate = 1.0;
+        utterance.rate = this._speed;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
         return new Promise(resolve => {
-            const fallback = setTimeout(resolve, 10000);
+            const fallback = setTimeout(resolve, Math.max(10000, 45000 / this._speed));
             utterance.onend = () => { clearTimeout(fallback); resolve(); };
             utterance.onerror = () => { clearTimeout(fallback); resolve(); };
             window.speechSynthesis.speak(utterance);
@@ -1466,18 +1471,21 @@ class UiBindings {
                 return;
             }
             const currentStep = s.steps[s.index];
+            let hadSpeech = false;
             if (currentStep) {
                 const parts = [];
+                if (currentStep.title) parts.push(currentStep.title);
                 if (currentStep.narration) parts.push(currentStep.narration);
-                if (currentStep.rule) parts.push(currentStep.rule);
                 if (currentStep.explain) parts.push(currentStep.explain);
                 if (Array.isArray(currentStep.details)) parts.push(...currentStep.details);
                 if (currentStep.running) parts.push(currentStep.running);
                 const text = parts.join('. ');
+                hadSpeech = !!text && this._ttsEnabled;
+                await this.o.engine.runStep(currentStep);
                 if (text) await this._speak(text);
             }
             await this.o.next();
-            this._autoTimer = setTimeout(tick, effectiveDelay());
+            this._autoTimer = setTimeout(tick, hadSpeech ? 50 : effectiveDelay());
         };
         this._autoTimer = setTimeout(tick, effectiveDelay());
     }

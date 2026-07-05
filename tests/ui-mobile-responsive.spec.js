@@ -31,11 +31,12 @@ test.describe('Teaching UI - Mobile Responsiveness', () => {
 
         // Click settings cog to open
         await settingsBtn.click();
-        await page.waitForTimeout(500);
         await expect(configGroup).toBeVisible(); // Visible when toggled
 
         // Click outside to close settings (click top-left to avoid overlapping dropdown card)
-        await page.click('#scene', { position: { x: 20, y: 20 } });
+        // On mobile, the open config group card is wide (width 365px, height 156px) and covers the top part of #scene.
+        // We click near the bottom of #scene (y: 220) to ensure we hit outside the dropdown.
+        await page.click('#scene', { position: { x: 20, y: 220 } });
         await page.waitForTimeout(500);
         await expect(configGroup).not.toBeVisible(); // Closed on outside click
 
