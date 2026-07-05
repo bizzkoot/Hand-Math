@@ -28,12 +28,12 @@
     <div id="app" class="hm-app no-scroll">
         <header id="header" class="hm-header" role="banner">
             <div class="hm-header-left">
-                <h1 id="title" class="hm-title" data-i18n="header.title">Hand Math — Count to 99</h1>
+                <h1 id="title" class="hm-title" data-i18n="header.title" data-i18n-title="header.titleTooltip">Hand Math — Count to 99</h1>
                 <div id="modeTabs" class="hm-tabs" role="tablist" data-i18n-aria="aria.modes">
-                    <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial" data-i18n="tab.tutorial">Tutorial</button>
-                    <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic" data-i18n="tab.arithmetic">Arithmetic</button>
-                    <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge" data-i18n="tab.challenge">Challenge</button>
-                    <button id="tabHelp" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelHelp" data-i18n="tab.help">Help</button>
+                    <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial" data-i18n="tab.tutorial" data-i18n-title="tab.tutorialTooltip">Tutorial</button>
+                    <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic" data-i18n="tab.arithmetic" data-i18n-title="tab.arithmeticTooltip">Arithmetic</button>
+                    <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge" data-i18n="tab.challenge" data-i18n-title="tab.challengeTooltip">Challenge</button>
+                    <button id="tabHelp" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelHelp" data-i18n="tab.help" data-i18n-title="tab.helpTooltip">Help</button>
                 </div>
             </div>
             <div class="hm-header-right">
@@ -45,7 +45,7 @@
                         <option value="en" data-i18n="lang.en">English</option>
                         <option value="ms" data-i18n="lang.ms">Bahasa Melayu</option>
                     </select>
-                    <div id="hmSkin" class="hm-skin" data-i18n-aria="aria.skinTone">
+                    <div id="hmSkin" class="hm-skin" data-i18n-aria="aria.skinTone" data-i18n-title="btn.skinTooltip">
                         <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":1}'></button>
                         <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":2}'></button>
                         <button class="hm-swatch" data-hex="#c79a6b" title="#c79a6b" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":3}'></button>
@@ -62,19 +62,19 @@
                         <svg class="sound-on" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                         <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
                     </button>
-                    <button id="btnInfo" class="hm-btn hm-btn-icon" data-i18n-aria="aria.info">i</button>
-                    <button id="btnFullscreen" class="hm-btn hm-btn-icon" data-i18n-aria="btn.fullscreenLabel">□</button>
+                    <button id="btnInfo" class="hm-btn hm-btn-icon" data-i18n-aria="aria.info" data-i18n-title="btn.infoTooltip" title="Info">i</button>
+                    <button id="btnFullscreen" class="hm-btn hm-btn-icon" data-i18n-aria="btn.fullscreenLabel" data-i18n-title="btn.fullscreenTooltip">□</button>
                 </div>
-                <button id="btnReset" class="hm-btn" aria-keyshortcuts="R" data-i18n="btn.reset">Reset</button>
-                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false">
+                <button id="btnReset" class="hm-btn" aria-keyshortcuts="R" data-i18n="btn.reset" data-i18n-title="btn.resetTooltip">Reset</button>
+                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false" data-i18n-title="btn.autoTooltip">
                     <svg class="auto-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"></polygon></svg>
                     <svg class="auto-pause" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
                     <span data-i18n="btn.auto">Auto</span>
                 </button>
                 <span id="speedGroup" class="hm-speed-group" hidden>
-                    <button id="btnSpeedDown" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedDownLabel">−</button>
+                    <button id="btnSpeedDown" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedDownLabel" data-i18n-title="btn.speedDownTooltip">−</button>
                     <span id="speedLabel" class="hm-speed-label">1.0×</span>
-                    <button id="btnSpeedUp" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedUpLabel">+</button>
+                    <button id="btnSpeedUp" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedUpLabel" data-i18n-title="btn.speedUpTooltip">+</button>
                 </span>
                 <button id="btnNarrate" class="hm-btn hm-btn-icon" aria-pressed="false" data-i18n-title="btn.narrateTitle" hidden data-i18n-aria="btn.narrateLabel">♪</button>
             </div>
@@ -161,7 +161,7 @@
                     </div>
                     <div class="hm-step-controls">
                         <button id="btnPrev" class="hm-btn" disabled data-i18n-title="panel.prevTitle" data-i18n-aria="panel.prevLabel" data-i18n="btn.prev">← Back</button>
-                        <button id="btnNext" class="hm-btn hm-btn-primary" data-i18n-title="panel.nextTitle" data-i18n-aria="panel.nextLabel" data-i18n="btn.next">Next →</button>
+                        <button id="btnNext" class="hm-btn hm-btn-primary" data-i18n-title="btn.nextTitle" data-i18n-aria="panel.nextLabel" data-i18n="btn.next">Next →</button>
                         <button id="btnNew" class="hm-btn" hidden data-i18n="btn.newProblem">New Problem</button>
                         <span id="autoStatus" class="hm-auto" hidden data-i18n="auto.off">Auto: Off</span>
                     </div>
