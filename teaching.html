@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hand Math — Teach 0–99 with two hands">
+    <title>Hand Math — Teaching UI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/teaching.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <script>
+        // Prevent flash of unstyled theme
+        const storedTheme = localStorage.getItem('hm-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', storedTheme);
+    </script>
+    <div id="app" class="hm-app no-scroll">
+        <header id="header" class="hm-header" role="banner">
+            <div class="hm-header-left">
+                <h1 id="title" class="hm-title">Hand Math — Count to 99</h1>
+                <div id="modeTabs" class="hm-tabs" role="tablist" aria-label="Modes">
+                    <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial">Tutorial</button>
+                    <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic">Arithmetic</button>
+                    <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge">Challenge</button>
+                    <button id="tabHelp" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelHelp">Help</button>
+                </div>
+            </div>
+            <div class="hm-header-right">
+                <button id="btnTheme" class="hm-btn hm-btn-icon" aria-label="Toggle Theme" title="Toggle Theme">
+                    <svg class="theme-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="theme-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <button id="btnSound" class="hm-btn hm-btn-icon" aria-label="Mute Sounds" title="Mute Sounds" aria-pressed="true">
+                    <svg class="sound-on" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                </button>
+                <button id="btnInfo" class="hm-btn hm-btn-icon" aria-label="Info">i</button>
+                <button id="btnReset" class="hm-btn" aria-keyshortcuts="R">Reset</button>
+                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false">
+                    <svg class="auto-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"></polygon></svg>
+                    <svg class="auto-pause" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    <span data-i18n="btn.auto">Auto</span>
+                </button>
+                <span id="speedGroup" class="hm-speed-group" hidden>
+                    <button id="btnSpeedDown" class="hm-btn hm-btn-icon" aria-label="Slower">−</button>
+                    <span id="speedLabel" class="hm-speed-label">1.0×</span>
+                    <button id="btnSpeedUp" class="hm-btn hm-btn-icon" aria-label="Faster">+</button>
+                </span>
+                <button id="btnNarrate" class="hm-btn hm-btn-icon" aria-pressed="false" title="Narrate steps aloud" hidden aria-label="Toggle narration">♪</button>
+                <button id="btnFullscreen" class="hm-btn hm-btn-icon" aria-label="Fullscreen">□</button>
+            </div>
+        </header>
+
+        <div id="content" class="hm-content" role="main">
+            <section id="scene" class="hm-scene" aria-label="3D hands">
+                <div id="scene-container" class="scene-container">
+                    <canvas id="three-canvas" aria-label="3D hands"></canvas>
+                    <div id="overlayLeft" class="hm-overlay left" aria-hidden="true"></div>
+                    <div id="overlayRight" class="hm-overlay right" aria-hidden="true"></div>
+                    <div id="carryBorrowCue" class="hm-carry-borrow" aria-hidden="true"></div>
+                    <div id="halos-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5;"></div>
+                </div>
+            </section>
+
+            <aside id="teachingPanel" class="hm-panel" role="region" aria-labelledby="panelHeading">
+                <header class="hm-panel-head">
+                    <h2 id="panelHeading" class="hm-panel-heading">Tutorial</h2>
+                    <div class="hm-op-switch" aria-label="Operation" hidden>
+                        <button id="btnAdd" class="hm-btn hm-btn-tab is-active">+</button>
+                        <button id="btnSub" class="hm-btn hm-btn-tab">−</button>
+                    </div>
+                    <button id="panelInfoBtn" class="hm-panel-info" type="button" aria-label="Show rules" aria-expanded="false">i</button>
+                    <span id="panelStepCounter" class="hm-step-counter" hidden></span>
+                </header>
+                <div id="panelQuestion" class="hm-panel-question" role="heading" aria-level="2">▷ 37 = ?</div>
+                <p id="panelExplanation" class="hm-panel-explanation">Left = tens · Right = ones · Thumb = 5</p>
+
+                <ol id="panelSteps" class="hm-steps" role="list" aria-live="polite">
+                    <!-- Steps injected here -->
+                </ol>
+
+                <div id="arithPrompt" class="hm-arith-prompt" hidden>
+                    <span id="operandA" class="hm-op">47</span>
+                    <span id="operator" class="hm-op">+</span>
+                    <span id="operandB" class="hm-op">38</span>
+                    <span id="equals" class="hm-op">=</span>
+                    <span id="answerSlot" class="hm-op hm-answer">?</span>
+                </div>
+
+                <div id="panelControls" class="hm-panel-controls">
+                    <div class="hm-mode-filter" aria-label="Practice options" hidden>
+                        <span class="hm-label">Practice:</span>
+                        <button id="mfAdd" class="hm-btn hm-btn-tab">+</button>
+                        <button id="mfSub" class="hm-btn hm-btn-tab">−</button>
+                        <button id="mfBoth" class="hm-btn hm-btn-tab is-active">±</button>
+                        <select id="levelSel" class="hm-level" aria-label="Level">
+                            <option value="1">Level 1 (no carry/borrow)</option>
+                            <option value="2" selected>Level 2 (mixed)</option>
+                            <option value="3">Level 3 (hard)</option>
+                        </select>
+                    </div>
+                    <div class="hm-step-controls">
+                        <button id="btnPrev" class="hm-btn" disabled title="Back: restore previous finger state" aria-label="Back (restore previous finger state)">← Back</button>
+                        <button id="btnNext" class="hm-btn hm-btn-primary" title="Next: run current step" aria-label="Next (run current step)">Next →</button>
+                        <button id="btnNew" class="hm-btn" hidden>New Problem</button>
+                        <span id="autoStatus" class="hm-auto" hidden>Auto: Off</span>
+                    </div>
+                    <div id="stepStatus" class="hm-step-status" aria-live="polite"></div>
+                </div>
+
+                <div id="statusLive" class="sr-only" aria-live="polite"></div>
+                <!-- Help Content -->
+                <div id="helpContent" class="hm-help" hidden></div>
+                <!-- Challenge Content -->
+                <div id="challengeContent" class="hm-challenge" hidden>
+                    <div id="challengeStartScreen" class="challenge-screen">
+                        <h3 class="challenge-title">Math Challenge Mode</h3>
+                        <p class="challenge-desc">Test your hand math skills! Show the requested number on the hands or solve the arithmetic problem before the timer runs out.</p>
+                        <div class="challenge-options">
+                            <label for="challengeDiff">Difficulty:</label>
+                            <select id="challengeDiff" class="hm-level">
+                                <option value="1">Level 1 (Single Hand)</option>
+                                <option value="2" selected>Level 2 (No Carry/Borrow)</option>
+                                <option value="3">Level 3 (Carry/Borrow)</option>
+                            </select>
+                        </div>
+                        <button id="btnChallengeStart" class="hm-btn hm-btn-primary" style="margin-top: 15px; width: 100%;">Start Challenge</button>
+                    </div>
+                    <div id="challengePlayScreen" class="challenge-screen" hidden>
+                        <div class="challenge-header-row">
+                            <span id="challengeTimer" class="challenge-timer">⏳ 15s</span>
+                            <span id="challengeStreak" class="challenge-streak">🔥 Streak: 0</span>
+                            <span id="challengeStars" class="challenge-stars">⭐ 0</span>
+                        </div>
+                        
+                        <div class="challenge-card">
+                            <div id="challengePrompt" class="challenge-prompt">Show 42</div>
+                            <div id="challengeProgressFeedback" class="challenge-feedback">Your Hands: 0</div>
+                        </div>
+                        
+                        <div id="challengeMessage" class="challenge-msg"></div>
+                        
+                        <div class="challenge-actions">
+                            <button id="btnChallengeSubmit" class="hm-btn hm-btn-primary" style="flex: 1;">Submit Answer</button>
+                            <button id="btnChallengeNext" class="hm-btn" style="flex: 1;" hidden>Next Challenge</button>
+                            <button id="btnChallengeExit" class="hm-btn hm-btn-danger">Exit</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        <!-- Info Modal -->
+        <div id="infoModal" class="hm-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
+            <div class="hm-modal-card">
+                <div class="hm-modal-head">
+                    <h3 id="infoTitle">How to read Hand Math</h3>
+                    <button id="infoClose" class="hm-btn hm-btn-icon" aria-label="Close">✕</button>
+                </div>
+                <div class="hm-modal-body">
+                    <p>Thumb counts as five. Left hand = tens (0–90). Right hand = ones (0–9).</p>
+                    <p>Addition: for ones overflow, think “+10” mentally, remove the complement on the right, then add tens including carry.</p>
+                    <p>Subtraction: borrow 10 from the left if ones are smaller; a cue will appear.</p>
+                </div>
+                <div class="hm-modal-foot">
+                    <button id="infoGotIt" class="hm-btn hm-btn-primary">Got it</button>
+                </div>
+            </div>
+        </div>
+        <!-- Guided Tour Overlay -->
+        <div id="tourOverlay" class="hm-tour" hidden>
+            <div class="hm-tour-mask"></div>
+            <div id="tourFocus" class="hm-tour-focus"></div>
+            <div id="tourPop" class="hm-tour-pop" role="dialog" aria-live="polite">
+                <div class="hm-tour-title" id="tourTitle">Title</div>
+                <div class="hm-tour-text" id="tourText">Body</div>
+                <div class="hm-tour-actions">
+                    <button id="tourBack" class="hm-btn">Back</button>
+                    <button id="tourSkip" class="hm-btn">Skip</button>
+                    <button id="tourNext" class="hm-btn hm-btn-primary">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor & Core -->
+    <script src="vendor/threejs/three.min.js"></script>
+    <script src="vendor/threejs/OrbitControls.js"></script>
+    <script src="vendor/threejs/GLTFLoader.js"></script>
+    <script src="js/handBoneMap.js"></script>
+    <script>window.threejsReady = typeof THREE !== 'undefined';</script>
+    <script src="js/realisticHandGeometry.js"></script>
+    <script src="js/handController.js"></script>
+    <script src="js/handMathCalculator.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- Teaching Orchestration -->
+    <script src="js/handAdapter.js"></script>
+    <script src="js/stepEngine.js"></script>
+    <script src="js/arithmeticBuilder.js"></script>
+    <script src="js/teachingOrchestrator.js"></script>
+    <script src="js/uiBindings.js"></script>
+    <script src="js/testApi.js"></script>
+
+    <script>
+        // Bootstrap Teaching UI when app is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const start = () => {
+                if (!window.handMathApp || !window.handMathApp.handController) {
+                    return setTimeout(start, 100);
+                }
+                const adapter = new HandAdapter(window.handMathApp);
+                const engine = new StepEngine(adapter);
+                const builder = new ArithmeticBuilder();
+                const orchestrator = new TeachingOrchestrator(engine, builder);
+                const ui = new UiBindings(orchestrator);
+                window.__HM__ = { adapter, engine, builder, orchestrator, ui };
+            };
+            start();
+        });
+    </script>
+</body>
+</html>

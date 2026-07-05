@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" data-i18n-html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="3D Hand Math - Interactive hand-based arithmetic visualization">
+    <title>3D Hand Math Visualization</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hand Math">
+    <link rel="apple-touch-icon" href="assets/icons/icon.svg">
+    <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/teaching.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <script>
+        // Prevent flash of unstyled theme
+        const storedTheme = localStorage.getItem('hm-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', storedTheme);
+    </script>
+    <div id="app" class="hm-app no-scroll">
+        <header id="header" class="hm-header" role="banner">
+            <div class="hm-header-left">
+                <h1 id="title" class="hm-title" data-i18n="header.title" data-i18n-title="header.titleTooltip">Hand Math — Count to 99</h1>
+                <div id="modeTabs" class="hm-tabs" role="tablist" data-i18n-aria="aria.modes">
+                    <button id="tabTutorial" class="hm-tab is-active" role="tab" aria-selected="true" aria-controls="panelTutorial" data-i18n="tab.tutorial" data-i18n-title="tab.tutorialTooltip">Tutorial</button>
+                    <button id="tabArithmetic" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelArithmetic" data-i18n="tab.arithmetic" data-i18n-title="tab.arithmeticTooltip">Arithmetic</button>
+                    <button id="tabChallenge" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelChallenge" data-i18n="tab.challenge" data-i18n-title="tab.challengeTooltip">Challenge</button>
+                    <button id="tabHelp" class="hm-tab" role="tab" aria-selected="false" aria-controls="panelHelp" data-i18n="tab.help" data-i18n-title="tab.helpTooltip">Help</button>
+                </div>
+            </div>
+            <div class="hm-header-right">
+                <button id="btnSettings" class="hm-btn hm-btn-icon" data-i18n-aria="aria.settings" data-i18n-title="aria.settings" aria-expanded="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <div id="configGroup" class="hm-config-group">
+                    <select id="langSwitcher" class="hm-lang-select" title="Language / Bahasa" data-i18n-title="lang.selectTitle">
+                        <option value="en" data-i18n="lang.en">English</option>
+                        <option value="ms" data-i18n="lang.ms">Bahasa Melayu</option>
+                    </select>
+                    <div id="hmSkin" class="hm-skin" data-i18n-aria="aria.skinTone" data-i18n-title="btn.skinTooltip">
+                        <button class="hm-swatch" data-hex="#f3d7c6" title="#f3d7c6" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":1}'></button>
+                        <button class="hm-swatch" data-hex="#e0b899" title="#e0b899" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":2}'></button>
+                        <button class="hm-swatch" data-hex="#c79a6b" title="#c79a6b" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":3}'></button>
+                        <button class="hm-swatch" data-hex="#a47250" title="#a47250" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":4}'></button>
+                        <button class="hm-swatch" data-hex="#7a4f35" title="#7a4f35" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":5}'></button>
+                        <button class="hm-swatch" data-hex="#4d3325" title="#4d3325" data-i18n-aria="aria.skinToneNum" data-i18n-aria-vars='{"n":6}'></button>
+                        <input id="hmSkinHex" class="hm-hex" type="text" inputmode="text" spellcheck="false" placeholder="#hex" data-i18n-aria="aria.customHex" pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" maxlength="7" />
+                    </div>
+                    <button id="btnTheme" class="hm-btn hm-btn-icon" data-i18n-aria="aria.toggleTheme" data-i18n-title="aria.toggleTheme">
+                        <svg class="theme-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                        <svg class="theme-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </button>
+                    <button id="btnSound" class="hm-btn hm-btn-icon" aria-pressed="true">
+                        <svg class="sound-on" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                        <svg class="sound-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                    </button>
+                    <button id="btnInfo" class="hm-btn hm-btn-icon" data-i18n-aria="aria.info" data-i18n-title="btn.infoTooltip" title="Info">i</button>
+                    <button id="btnFullscreen" class="hm-btn hm-btn-icon" data-i18n-aria="btn.fullscreenLabel" data-i18n-title="btn.fullscreenTooltip">□</button>
+                </div>
+                <button id="btnReset" class="hm-btn" aria-keyshortcuts="R" data-i18n="btn.reset" data-i18n-title="btn.resetTooltip">Reset</button>
+                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false" data-i18n-title="btn.autoTooltip">
+                    <svg class="auto-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"></polygon></svg>
+                    <svg class="auto-pause" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    <span data-i18n="btn.auto">Auto</span>
+                </button>
+                <span id="speedGroup" class="hm-speed-group" hidden>
+                    <button id="btnSpeedDown" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedDownLabel" data-i18n-title="btn.speedDownTooltip">−</button>
+                    <span id="speedLabel" class="hm-speed-label">1.0×</span>
+                    <button id="btnSpeedUp" class="hm-btn hm-btn-icon" data-i18n-aria="btn.speedUpLabel" data-i18n-title="btn.speedUpTooltip">+</button>
+                </span>
+                <button id="btnNarrate" class="hm-btn hm-btn-icon" aria-pressed="false" data-i18n-title="btn.narrateTitle" hidden data-i18n-aria="btn.narrateLabel">♪</button>
+            </div>
+        </header>
+
+        <div id="content" class="hm-content" role="main">
+            <section id="scene" class="hm-scene" data-i18n-aria="aria.threeDScene">
+                <div id="scene-container" class="scene-container">
+                    <canvas id="three-canvas" data-i18n-aria="aria.threeDScene"></canvas>
+                    <div id="loading-overlay" class="loading-overlay">
+                        <div class="loader">
+                            <div class="loader-spinner"></div>
+                            <p data-i18n="loading.text">Loading 3D Scene...</p>
+                        </div>
+                    </div>
+                    <div class="scene-controls">
+                        <button id="reset-camera" class="control-btn" data-i18n-title="scene.resetCamera">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                        </button>
+                        <button id="toggle-wireframe" class="control-btn" data-i18n-title="scene.toggleWireframe">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Bottom-left attribution overlay -->
+                    <div id="assetCredits" class="hm-credits" role="note" data-i18n-aria="aria.modelAttribution">
+                        <span data-i18n="credit.handModel">Hand model:</span> <a href="https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e" target="_blank" rel="noopener" id="creditTitle">Rigged Hand</a>
+                        by <a href="https://sketchfab.com/elenaferfor" target="_blank" rel="noopener" id="creditAuthor">Elena FF</a>
+                        on <a href="https://sketchfab.com" target="_blank" rel="noopener">Sketchfab</a> —
+                        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
+                    </div>
+                    <div id="overlayLeft" class="hm-overlay left" aria-hidden="true"></div>
+                    <div id="overlayRight" class="hm-overlay right" aria-hidden="true"></div>
+                    <div id="carryBorrowCue" class="hm-carry-borrow" aria-hidden="true"></div>
+                    <div id="halos-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5;"></div>
+                    <div id="handControlsContainer" class="hand-controls-container">
+                        <div id="handControlsLeft" class="hand-controls hand-controls-left" hidden>
+                            <button class="hand-control-btn hand-control-minus" data-hand="left" data-i18n-aria="aria.handLeftDec">−</button>
+                            <button class="hand-control-btn hand-control-plus" data-hand="left" data-i18n-aria="aria.handLeftInc">+</button>
+                        </div>
+                        <div id="handControlsRight" class="hand-controls hand-controls-right" hidden>
+                            <button class="hand-control-btn hand-control-minus" data-hand="right" data-i18n-aria="aria.handRightDec">−</button>
+                            <button class="hand-control-btn hand-control-plus" data-hand="right" data-i18n-aria="aria.handRightInc">+</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <aside id="teachingPanel" class="hm-panel" role="region" aria-labelledby="panelHeading">
+                <header class="hm-panel-head">
+                    <h2 id="panelHeading" class="hm-panel-heading" data-i18n="panel.tutorialHeading">Tutorial</h2>
+                    <div class="hm-op-switch" data-i18n-aria="aria.operation" hidden>
+                        <button id="btnAdd" class="hm-btn hm-btn-tab is-active">+</button>
+                        <button id="btnSub" class="hm-btn hm-btn-tab">−</button>
+                    </div>
+                    <button id="panelInfoBtn" class="hm-panel-info" type="button" data-i18n-aria="aria.showRules" aria-expanded="false">i</button>
+                    <span id="panelStepCounter" class="hm-step-counter" hidden></span>
+                </header>
+                <div id="panelQuestion" class="hm-panel-question" role="heading" aria-level="2">▷ 37 = ?</div>
+                <p id="panelExplanation" class="hm-panel-explanation" data-i18n="panel.explanation">Left = tens, Right = ones. Thumb = five.</p>
+                <ol id="panelSteps" class="hm-steps" role="list" aria-live="polite"></ol>
+                <div id="arithPrompt" class="hm-arith-prompt" hidden>
+                    <span id="operandA" class="hm-op">47</span>
+                    <span id="operator" class="hm-op">+</span>
+                    <span id="operandB" class="hm-op">38</span>
+                    <span id="equals" class="hm-op">=</span>
+                    <span id="answerSlot" class="hm-op hm-answer">?</span>
+                </div>
+                <div id="panelControls" class="hm-panel-controls">
+                    <div class="hm-mode-filter" data-i18n-aria="aria.practiceOptions" hidden>
+                        <span class="hm-label" data-i18n="practice.label">Practice:</span>
+                        <button id="mfAdd" class="hm-btn hm-btn-tab">+</button>
+                        <button id="mfSub" class="hm-btn hm-btn-tab">−</button>
+                        <button id="mfBoth" class="hm-btn hm-btn-tab is-active">±</button>
+                        <select id="levelSel" class="hm-level" data-i18n-aria="aria.level">
+                            <option value="1" data-i18n="level.1">Level 1 (no carry/borrow)</option>
+                            <option value="2" selected data-i18n="level.2">Level 2 (mixed)</option>
+                            <option value="3" data-i18n="level.3">Level 3 (hard)</option>
+                        </select>
+                    </div>
+                    <div class="hm-step-controls">
+                        <button id="btnPrev" class="hm-btn" disabled data-i18n-title="panel.prevTitle" data-i18n-aria="panel.prevLabel" data-i18n="btn.prev">← Back</button>
+                        <button id="btnNext" class="hm-btn hm-btn-primary" data-i18n-title="btn.nextTitle" data-i18n-aria="panel.nextLabel" data-i18n="btn.next">Next →</button>
+                        <button id="btnNew" class="hm-btn" hidden data-i18n="btn.newProblem">New Problem</button>
+                        <span id="autoStatus" class="hm-auto" hidden data-i18n="auto.off">Auto: Off</span>
+                    </div>
+                    <div id="stepStatus" class="hm-step-status" aria-live="polite"></div>
+                </div>
+                <div id="statusLive" class="sr-only" aria-live="polite"></div>
+                <!-- Help Content -->
+                <div id="helpContent" class="hm-help" hidden></div>
+                <!-- Challenge Content -->
+                <div id="challengeContent" class="hm-challenge" hidden>
+                    <div id="challengeStartScreen" class="challenge-screen">
+                        <h3 class="challenge-title" data-i18n="challenge.title">Math Challenge</h3>
+                        <p class="challenge-desc" data-i18n="challenge.desc">Show numbers on the hands to answer each question. Speed earns better gems!</p>
+                        <div id="challengeUnlockInfo" class="challenge-unlock" hidden>
+                            <span id="challengeUnlockMsg" class="challenge-unlock-msg"></span>
+                        </div>
+                        <button id="btnChallengeStart" class="hm-btn hm-btn-primary" style="margin-top: 15px; width: 100%;" data-i18n="challenge.startBtn">Start Challenge</button>
+                    </div>
+                    <div id="challengePlayScreen" class="challenge-screen" hidden>
+                        <div class="challenge-header-row">
+                            <div id="challengeTierBadge" class="challenge-tier-badge challenge-tier-gold" data-i18n-title="challenge.tierGold">
+                                <span id="challengeTierIcon" class="challenge-tier-icon">✦</span>
+                            </div>
+                            <div class="challenge-header-center">
+                                <span id="challengeRound" class="challenge-round">Round 1/10</span>
+                                <div id="challengeTimerBar" class="challenge-timer-bar">
+                                    <div id="challengeTimerFill" class="challenge-timer-fill challenge-fill-gold"></div>
+                                </div>
+                            </div>
+                            <div class="challenge-gem-display">
+                                <span class="challenge-gem-icon">💎</span>
+                                <span id="challengeGemCount" class="challenge-gem-count">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="challenge-card">
+                            <div id="challengePrompt" class="challenge-prompt"></div>
+                            <div id="challengeFeedback" class="challenge-feedback"></div>
+                            <div id="challengeAttempts" class="challenge-attempts"></div>
+                        </div>
+                        
+                        <div id="challengeMessage" class="challenge-msg"></div>
+                        
+                        <div class="challenge-actions">
+                            <button id="btnChallengeHint" class="hm-btn" data-i18n="challenge.hintBtn">Hint</button>
+                            <button id="btnChallengeSubmit" class="hm-btn hm-btn-primary" style="flex: 1;" data-i18n="challenge.submitBtn">Submit</button>
+                            <button id="btnChallengeExit" class="hm-btn hm-btn-danger" data-i18n="challenge.exitBtn">Exit</button>
+                        </div>
+                    </div>
+                    <div id="challengeEndScreen" class="challenge-screen" hidden>
+                        <h3 class="challenge-end-title" data-i18n="challenge.endTitle">Challenge Complete!</h3>
+                        <div id="challengeEndGemTray" class="challenge-end-gem-tray"></div>
+                        <p id="challengeEndBreakdown" class="challenge-end-breakdown"></p>
+                        <div id="challengeEndUnlock" class="challenge-end-unlock" hidden></div>
+                        <div class="challenge-actions" style="flex-direction: column; gap: 8px;">
+                            <button id="btnChallengePlayAgain" class="hm-btn hm-btn-primary" style="width: 100%;" data-i18n="challenge.playAgain">Play Again</button>
+                            <button id="btnChallengeEndExit" class="hm-btn" style="width: 100%;" data-i18n="challenge.returnMenu">Return to Menu</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        <!-- Info Modal -->
+        <div id="infoModal" class="hm-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
+            <div class="hm-modal-card">
+                <div class="hm-modal-head">
+                    <h3 id="infoTitle" data-i18n="modal.infoTitle">How to read Hand Math</h3>
+                    <button id="infoClose" class="hm-btn hm-btn-icon" data-i18n-aria="aria.close">✕</button>
+                </div>
+                <div class="hm-modal-body">
+                    <p data-i18n="modal.infoBody1">Thumb counts as five. Left hand = tens (0–90). Right hand = ones (0–9).</p>
+                    <p data-i18n="modal.infoBody2">Addition: for ones overflow, think “+10” mentally, remove the complement on the right, then add tens including carry.</p>
+                    <p data-i18n="modal.infoBody3">Subtraction: borrow 10 from the left if ones are smaller; a cue will appear.</p>
+                </div>
+                <div class="hm-modal-foot">
+                    <button id="infoGotIt" class="hm-btn hm-btn-primary" data-i18n="modal.gotIt">Got it</button>
+                </div>
+            </div>
+        </div>
+        <!-- Guided Tour Overlay -->
+        <div id="tourOverlay" class="hm-tour" hidden>
+            <div class="hm-tour-mask"></div>
+            <div id="tourFocus" class="hm-tour-focus"></div>
+            <div id="tourPop" class="hm-tour-pop" role="dialog" aria-live="polite">
+                <div class="hm-tour-title" id="tourTitle">Title</div>
+                <div class="hm-tour-text" id="tourText">Body</div>
+                <div class="hm-tour-actions">
+                    <button id="tourBack" class="hm-btn" data-i18n="tour.back">Back</button>
+                    <button id="tourSkip" class="hm-btn" data-i18n="tour.skip">Skip</button>
+                    <button id="tourNext" class="hm-btn hm-btn-primary" data-i18n="tour.next">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="vendor/threejs/three.min.js"></script>
+    <script src="vendor/threejs/OrbitControls.js"></script>
+    <script src="vendor/threejs/GLTFLoader.js"></script>
+    <script src="js/handBoneMap.js"></script>
+    <script>window.threejsReady = typeof THREE !== 'undefined';</script>
+    <script src="js/realisticHandGeometry.js"></script>
+    <script src="js/handController.js"></script>
+    <script src="js/handDebug.js"></script>
+    <script src="js/handMathCalculator.js"></script>
+    <script src="js/skinToneService.js"></script>
+    <script>window.HANDMATH_STRICT_GLTF = true;</script>
+    <script src="js/i18n.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/handAdapter.js"></script>
+    <script src="js/stepEngine.js"></script>
+    <script src="js/arithmeticBuilder.js"></script>
+    <script src="js/teachingOrchestrator.js"></script>
+    <script src="js/uiBindings.js"></script>
+    <script src="js/testApi.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize i18n
+            await window.i18n.init();
+
+            // Wire language switcher
+            const langSwitcher = document.getElementById('langSwitcher');
+            if (langSwitcher) {
+                langSwitcher.value = window.i18n.currentLang;
+                langSwitcher.addEventListener('change', () => {
+                    window.i18n.setLang(langSwitcher.value);
+                });
+                window.i18n.onChange(() => {
+                    langSwitcher.value = window.i18n.currentLang;
+                });
+            }
+
+            const start = () => {
+                if (!window.handMathApp || !window.handMathApp.handController) {
+                    return setTimeout(start, 100);
+                }
+                const adapter = new HandAdapter(window.handMathApp);
+                const engine = new StepEngine(adapter);
+                const builder = new ArithmeticBuilder();
+                const orchestrator = new TeachingOrchestrator(engine, builder);
+                const ui = new UiBindings(orchestrator);
+                window.__HM__ = { adapter, engine, builder, orchestrator, ui };
+
+                // Wire skin tone controls (compact, no layout shift)
+                const picker = document.getElementById('hmSkin');
+                const input = document.getElementById('hmSkinHex');
+                const svc = () => window.handMathApp?.skinToneService;
+                const setHex = (h) => {
+                    if (!h) return;
+                    window.handMathApp?.setSkinColor(h);
+                    if (input) input.value = SkinToneService.isValidHex(h) ? SkinToneService._normalizeHex(h) : (input.value || '');
+                };
+                if (picker) {
+                    picker.addEventListener('click', (e) => {
+                        const b = e.target.closest('.hm-swatch');
+                        if (b && b.dataset.hex) setHex(b.dataset.hex);
+                    });
+                }
+                if (input) {
+                    input.addEventListener('change', () => setHex(input.value));
+                    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') setHex(input.value); });
+                    // Seed with default if available
+                    const def = svc()?.defaultHex;
+                    if (def) input.value = def;
+                    // Ensure materials are cached if service attached
+                    try { svc()?.cacheMaterials(); } catch(_){}
+                }
+            };
+            start();
+        });
+    </script>
+    
+    <!-- Hidden Test/Debug Panel for Automated Playwright Tests -->
+    <div id="test-debug-panel" style="position: fixed; bottom: 10px; left: 10px; opacity: 0.01; z-index: 999999; pointer-events: none; width: 120px; height: 120px; overflow: hidden; background: white;" aria-hidden="true">
+        <!-- Hand Values -->
+        <span id="left-hand-value">0</span>
+        <span id="right-hand-value">0</span>
+        <span id="total-value">0</span>
+        <span id="left-display">0</span>
+        <span id="right-display">0</span>
+        <span id="sum-display">0</span>
+        
+        <!-- Hand Control Buttons -->
+        <!-- Left Hand (Tens) -->
+        <button class="number-btn" data-hand="left" data-value="0" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">0</button>
+        <button class="number-btn" data-hand="left" data-value="10" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">10</button>
+        <button class="number-btn" data-hand="left" data-value="20" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">20</button>
+        <button class="number-btn" data-hand="left" data-value="30" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">30</button>
+        <button class="number-btn" data-hand="left" data-value="40" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">40</button>
+        <button class="number-btn" data-hand="left" data-value="50" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">50</button>
+        <button class="number-btn" data-hand="left" data-value="60" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">60</button>
+        <button class="number-btn" data-hand="left" data-value="70" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">70</button>
+        <button class="number-btn" data-hand="left" data-value="80" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">80</button>
+        <button class="number-btn" data-hand="left" data-value="90" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">90</button>
+        
+        <!-- Right Hand (Ones) -->
+        <button class="number-btn" data-hand="right" data-value="0" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">0</button>
+        <button class="number-btn" data-hand="right" data-value="1" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">1</button>
+        <button class="number-btn" data-hand="right" data-value="2" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">2</button>
+        <button class="number-btn" data-hand="right" data-value="3" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">3</button>
+        <button class="number-btn" data-hand="right" data-value="4" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">4</button>
+        <button class="number-btn" data-hand="right" data-value="5" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">5</button>
+        <button class="number-btn" data-hand="right" data-value="6" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">6</button>
+        <button class="number-btn" data-hand="right" data-value="7" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">7</button>
+        <button class="number-btn" data-hand="right" data-value="8" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">8</button>
+        <button class="number-btn" data-hand="right" data-value="9" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">9</button>
+        
+        <!-- Calculator Buttons -->
+        <button class="calc-btn" data-total="42" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">42</button>
+        
+        <!-- Control/Reset Buttons -->
+        <button id="reset-hands" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">Reset Hands</button>
+        <button id="demo-counting" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">Demo Counting</button>
+        <button id="validate-positions" style="width:10px;height:10px;pointer-events:auto;padding:0;margin:1px;font-size:1px;">Validate Positions</button>
+    </div>
+</body>
+</html>

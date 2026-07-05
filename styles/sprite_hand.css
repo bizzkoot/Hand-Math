@@ -1,0 +1,30 @@
+.hand {
+    width: 150px;
+    height: 200px;
+    background-image: url('../assets/hand-sprites.png'); /* You need to provide this image */
+    background-size: 1000% 100%; /* 10 frames horizontally */
+    background-repeat: no-repeat;
+    transition: background-position 0.3s ease;
+    margin: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Hand states */
+.hand.state-0 { background-position: 0% 0; }
+.hand.state-1 { background-position: 11.11% 0; }
+.hand.state-2 { background-position: 22.22% 0; }
+.hand.state-3 { background-position: 33.33% 0; }
+.hand.state-4 { background-position: 44.44% 0; }
+.hand.state-5 { background-position: 55.55% 0; }
+.hand.state-6 { background-position: 66.66% 0; }
+.hand.state-7 { background-position: 77.77% 0; }
+.hand.state-8 { background-position: 88.88% 0; }
+.hand.state-9 { background-position: 100% 0; }
+
+.hands-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
