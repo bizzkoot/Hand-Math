@@ -185,6 +185,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
 }
 .hm-btn:hover { background: var(--btn-hover-bg); border-color: var(--hm-accent); transform: translateY(-1px); }
 .hm-btn:active { transform: translateY(0); }

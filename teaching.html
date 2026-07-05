@@ -39,7 +39,11 @@
                 </button>
                 <button id="btnInfo" class="hm-btn hm-btn-icon" aria-label="Info">i</button>
                 <button id="btnReset" class="hm-btn" aria-keyshortcuts="R">Reset</button>
-                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false">Auto ▶</button>
+                <button id="btnAuto" class="hm-btn" aria-keyshortcuts="A" aria-pressed="false">
+                    <svg class="auto-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"></polygon></svg>
+                    <svg class="auto-pause" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    <span data-i18n="btn.auto">Auto</span>
+                </button>
                 <span id="speedGroup" class="hm-speed-group" hidden>
                     <button id="btnSpeedDown" class="hm-btn hm-btn-icon" aria-label="Slower">−</button>
                     <span id="speedLabel" class="hm-speed-label">1.0×</span>

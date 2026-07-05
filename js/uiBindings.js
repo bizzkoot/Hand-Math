@@ -1172,6 +1172,11 @@ class UiBindings {
         this.btnAuto.setAttribute('aria-pressed', String(next));
         this.autoStatus.hidden = !next;
         this.autoStatus.textContent = next ? window.i18n.t('auto.on') : window.i18n.t('auto.off');
+        // Toggle play/pause icons
+        const playIcon = this.btnAuto.querySelector('.auto-play');
+        const pauseIcon = this.btnAuto.querySelector('.auto-pause');
+        if (playIcon) playIcon.style.display = next ? 'none' : '';
+        if (pauseIcon) pauseIcon.style.display = next ? '' : 'none';
         if (this.speedGroup) this.speedGroup.hidden = !next;
         if (this.btnNarrate) {
             this.btnNarrate.hidden = !next;
@@ -1464,6 +1469,9 @@ class UiBindings {
             if (currentStep) {
                 const parts = [];
                 if (currentStep.narration) parts.push(currentStep.narration);
+                if (currentStep.rule) parts.push(currentStep.rule);
+                if (currentStep.explain) parts.push(currentStep.explain);
+                if (Array.isArray(currentStep.details)) parts.push(...currentStep.details);
                 if (currentStep.running) parts.push(currentStep.running);
                 const text = parts.join('. ');
                 if (text) await this._speak(text);
