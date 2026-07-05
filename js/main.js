@@ -628,6 +628,43 @@ class HandMathApp {
 
         // +/- Hand control buttons
         this._wireHandControls();
+
+        // Reactive header compaction - fits header content on any screen
+        this._fitHeader = () => {
+            if (this._fittingHeader) return;
+            this._fittingHeader = true;
+            try {
+                const header = document.getElementById('header');
+                if (!header) return;
+                header.dataset.compact = '0';
+                while (header.scrollWidth > header.clientWidth + 1
+                       && +header.dataset.compact < 3) {
+                    header.dataset.compact = String(+header.dataset.compact + 1);
+                }
+            } finally {
+                requestAnimationFrame(() => { this._fittingHeader = false; });
+            }
+        };
+
+        // Synchronous execution on init before first paint
+        this._fitHeader();
+
+        // Re-run on resize, orientation change, and header content changes
+        window.addEventListener('resize', () => this._fitHeader());
+        window.addEventListener('orientationchange', () => this._fitHeader());
+        if ('ResizeObserver' in window) {
+            this._headerObserver = new ResizeObserver(() => this._fitHeader());
+            this._headerObserver.observe(document.getElementById('header'));
+        }
+
+        // 3D camera refresh when layout changes (scene resizes)
+        if ('ResizeObserver' in window) {
+            this._sceneObserver = new ResizeObserver(() => this.onWindowResize());
+            const sceneEl = this.sceneContainer ? this.sceneContainer.parentElement : null;
+            if (sceneEl) {
+                this._sceneObserver.observe(sceneEl);
+            }
+        }
     }
 
     /**

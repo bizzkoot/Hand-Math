@@ -1488,6 +1488,10 @@ class UiBindings {
         } catch (_) {
             if (document.body.dataset.fullscreen) delete document.body.dataset.fullscreen; else document.body.dataset.fullscreen = '1';
         }
+        // Ensure 3D camera refreshes after fullscreen transition
+        if (window.handMathApp && typeof window.handMathApp.onWindowResize === 'function') {
+            setTimeout(() => window.handMathApp.onWindowResize(), 100);
+        }
     }
 }
 
