@@ -243,5 +243,15 @@
   "challenge.slowAnswer": "Berjaya!",
   "challenge.hintTitle": "Petunjuk: jawapan antara {{low}} dan {{high}}",
   "challenge.unlockCurrent": "Tahap {{level}}",
-  "challenge.endGemBreakdown": "Emas: {{gold}}  Perak: {{silver}}  Gangsa: {{bronze}}"
+  "challenge.endGemBreakdown": "Emas: {{gold}}  Perak: {{silver}}  Gangsa: {{bronze}}",
+  "install.modalTitle": "Cara Muat Turun Hand Math",
+  "install.modalGotIt": "Faham",
+  "install.widgetTitle": "Muat Turun Hand Math!",
+  "install.widgetDesc": "Main luar talian bila-bila masa!",
+  "install.widgetBtn": "Muat Turun",
+  "install.modalBodyAndroid": "Untuk muat turun Hand Math pada tablet Android anda:\n\n1. Ketik ikon menu tiga titik (⋮) di penjuru kanan sebelah atas pelayar Chrome.\n2. Ketik 'Tambah ke skrin Utama' atau 'Pasang aplikasi'.\n3. Ketik 'Tambah' atau 'Pasang' untuk mengesahkan.",
+  "install.modalBodyGeneric": "Untuk muat turun Hand Math:\n\n- Android: Ketik menu (⋮) -> 'Tambah ke skrin Utama'.\n- iPad/iOS: Ketik butang kongsi (⎋) -> 'Tambah ke Skrin Utama'.",
+  "help.installPrompt": "Mahu muat turun Hand Math sebagai aplikasi?",
+  "help.github": "Repositori GitHub",
+  "help.viewCode": "Lihat Kod"
 }

@@ -94,19 +94,20 @@ test.describe('Aloha-style pedagogy — 7 worked examples', () => {
     expect(mentalStep.why).toMatch(/Big Friend/);
     expect(mentalStep.rule).toMatch(/Big Friend/);
 
-    const stepIds = await page.evaluate(() => TEST_API.getState().steps.map(s => s.id));
-    const carryIdx = stepIds.indexOf('a-add-tens');
-    expect(carryIdx).toBeGreaterThanOrEqual(0);
-
-    // Advance to carry step
-    for (let i = 0; i < carryIdx; i++) {
+    // Advance until we reach the carry step, then assert cue immediately
+    while (true) {
+      const currentId = await page.evaluate(() => TEST_API.getState().step?.id || null);
+      if (currentId === 'a-add-tens') {
+        // Trigger the carry step
+        await page.click('#btnNext');
+        // Cue is transient (~800ms); assert quickly
+        await expect(page.locator('#carryBorrowCue')).toHaveText('Carry 1 ten', { timeout: 1500 });
+        await page.evaluate(() => TEST_API.waitForSettled(300));
+        break;
+      }
       await page.click('#btnNext');
       await page.evaluate(() => TEST_API.waitForSettled(300));
     }
-    
-    // Now trigger carry step
-    await page.click('#btnNext');
-    await expect(page.locator('#carryBorrowCue')).toHaveText('Carry 1 ten', { timeout: 1500 });
 
     // Walk to the end
     while (true) {
@@ -167,16 +168,20 @@ test.describe('Aloha-style pedagogy — 7 worked examples', () => {
     expect(tensStep.narration).toMatch(/lost|stays|kekal|kehilangan/);
     expect(tensStep.why).toBeFalsy();
 
-    const borrowIdx = stepIds.indexOf('s-borrow');
-    expect(borrowIdx).toBeGreaterThanOrEqual(0);
-
-    for (let i = 0; i < borrowIdx; i++) {
+    // Advance until we reach the borrow step, then assert cue immediately
+    while (true) {
+      const currentId = await page.evaluate(() => TEST_API.getState().step?.id || null);
+      if (currentId === 's-borrow') {
+        // Trigger the borrow step
+        await page.click('#btnNext');
+        // Cue is transient (~800ms); assert quickly
+        await expect(page.locator('#carryBorrowCue')).toHaveText('Borrow 1 ten', { timeout: 1500 });
+        await page.evaluate(() => TEST_API.waitForSettled(300));
+        break;
+      }
       await page.click('#btnNext');
       await page.evaluate(() => TEST_API.waitForSettled(300));
     }
-
-    await page.click('#btnNext');
-    await expect(page.locator('#carryBorrowCue')).toHaveText('Borrow 1 ten', { timeout: 1500 });
 
     while (true) {
       const currentId = await page.evaluate(() => TEST_API.getState().step?.id || null);

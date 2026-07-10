@@ -243,5 +243,15 @@
   "challenge.slowAnswer": "You got it!",
   "challenge.hintTitle": "Hint: target is between {{low}} and {{high}}",
   "challenge.unlockCurrent": "Level {{level}}",
-  "challenge.endGemBreakdown": "Gold: {{gold}}  Silver: {{silver}}  Bronze: {{bronze}}"
+  "challenge.endGemBreakdown": "Gold: {{gold}}  Silver: {{silver}}  Bronze: {{bronze}}",
+  "install.modalTitle": "How to Install Hand Math",
+  "install.modalGotIt": "Got It",
+  "install.widgetTitle": "Install Hand Math!",
+  "install.widgetDesc": "Play offline anytime!",
+  "install.widgetBtn": "Install",
+  "install.modalBodyAndroid": "To install Hand Math on your Android tablet:\n\n1. Tap the three dots menu icon (⋮) at the top-right corner of the Chrome browser.\n2. Tap 'Add to Home screen' or 'Install app'.\n3. Tap 'Add' or 'Install' to confirm.",
+  "install.modalBodyGeneric": "To install Hand Math:\n\n- Android: Tap the menu (⋮) -> 'Add to Home screen'.\n- iPad/iOS: Tap the share button (⎋) -> 'Add to Home Screen'.",
+  "help.installPrompt": "Want to install Hand Math as an app?",
+  "help.github": "GitHub Repository",
+  "help.viewCode": "View Code"
 }
