@@ -244,6 +244,21 @@
                 </div>
             </div>
         </div>
+        <!-- Install Modal -->
+        <div id="installModal" class="hm-modal" role="dialog" aria-modal="true" aria-labelledby="installModalTitle" hidden>
+            <div class="hm-modal-card">
+                <div class="hm-modal-head">
+                    <h3 id="installModalTitle" data-i18n="install.modalTitle">How to Install Hand Math</h3>
+                    <button id="installClose" class="hm-btn hm-btn-icon" data-i18n-aria="aria.close">✕</button>
+                </div>
+                <div class="hm-modal-body">
+                    <p id="installInstructionText" style="white-space: pre-line; line-height: 1.6; font-size: 14px; margin: 0;"></p>
+                </div>
+                <div class="hm-modal-foot">
+                    <button id="installGotIt" class="hm-btn hm-btn-primary" data-i18n="install.modalGotIt">Got it</button>
+                </div>
+            </div>
+        </div>
         <!-- Guided Tour Overlay -->
         <div id="tourOverlay" class="hm-tour" hidden>
             <div class="hm-tour-mask"></div>
@@ -257,6 +272,18 @@
                     <button id="tourNext" class="hm-btn hm-btn-primary" data-i18n="tour.next">Next</button>
                 </div>
             </div>
+        </div>
+        <!-- Floating Install Widget -->
+        <div id="pwaInstallWidget" class="hm-install-widget" style="display: none;">
+            <button id="btnDismissInstall" class="hm-install-dismiss" aria-label="Dismiss">✕</button>
+            <div class="hm-install-content">
+                <span class="hm-install-icon">📥</span>
+                <div class="hm-install-text">
+                    <h4 data-i18n="install.widgetTitle">Install Hand Math!</h4>
+                    <p data-i18n="install.widgetDesc">Play offline anytime!</p>
+                </div>
+            </div>
+            <button id="btnTriggerInstall" class="hm-btn hm-btn-primary hm-install-action-btn" data-i18n="install.widgetBtn">Install</button>
         </div>
     </div>
 

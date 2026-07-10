@@ -99,6 +99,7 @@ class UiBindings {
                 this.o.setProblem(a, b, op);
             });
         }
+        this._setupPWAInstallWidget();
     }
 
     _wire() {
@@ -294,22 +295,41 @@ class UiBindings {
 
         // Tour wiring
         this._tourIdx = -1;
+        this._originalMode = null;
         const tourSteps = () => ([
             { sel: '#scene-container', title: window.i18n.t('tour.step1Title'), text: window.i18n.t('tour.step1Text') },
-            { sel: '#panelSteps', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
-            { sel: '#panelControls', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') }
+            { sel: '#modeTabs', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
+            { sel: '#teachingPanel', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') },
+            { sel: '#panelSteps', title: window.i18n.t('tour.step4Title'), text: window.i18n.t('tour.step4Text') },
+            { sel: '#panelControls', title: window.i18n.t('tour.step5Title'), text: window.i18n.t('tour.step5Text') },
+            { sel: '#btnAuto', title: window.i18n.t('tour.step6Title'), text: window.i18n.t('tour.step6Text') },
+            { sel: '#btnSettings', title: window.i18n.t('tour.step7Title'), text: window.i18n.t('tour.step7Text') }
         ]);
         const positionTour = () => {
             if (this._tourIdx < 0) return;
             const step = tourSteps()[this._tourIdx];
-            const el = document.querySelector(step.sel);
+            let sel = step.sel;
+            if (sel === '#btnSettings') {
+                const btn = document.querySelector(sel);
+                if (btn && getComputedStyle(btn).display === 'none') {
+                    sel = '#configGroup';
+                }
+            }
+            const el = document.querySelector(sel);
             if (!el) return this._endTour();
             const rect = el.getBoundingClientRect();
             Object.assign(this.tour.focus.style, {
                 left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px'
             });
-            const popW = 320;
-            const popH = 140;
+
+            // Set content first so offsetWidth and offsetHeight can be read accurately
+            this.tour.title.textContent = step.title;
+            this.tour.text.textContent = step.text;
+            this.tour.next.textContent = (this._tourIdx >= tourSteps().length - 1) ? window.i18n.t('tour.done') : window.i18n.t('tour.next');
+
+            const popW = this.tour.pop.offsetWidth || 300;
+            const popH = this.tour.pop.offsetHeight || 140;
+
             // Try right of target, then left
             let popX;
             if (rect.right + 12 + popW <= window.innerWidth) {
@@ -328,10 +348,12 @@ class UiBindings {
             } else {
                 popY = Math.max(8, Math.min(rect.bottom + 12, window.innerHeight - popH - 8));
             }
+
+            // Strictly clamp coordinates to screen boundaries to prevent overflow/cutoff
+            popX = Math.max(8, Math.min(popX, window.innerWidth - popW - 8));
+            popY = Math.max(8, Math.min(popY, window.innerHeight - popH - 8));
+
             Object.assign(this.tour.pop.style, { left: popX + 'px', top: popY + 'px' });
-            this.tour.title.textContent = step.title;
-            this.tour.text.textContent = step.text;
-            this.tour.next.textContent = (this._tourIdx >= tourSteps().length - 1) ? window.i18n.t('tour.done') : window.i18n.t('tour.next');
         };
         const nextTour = () => {
             this.soundSynth.playClick();
@@ -351,27 +373,16 @@ class UiBindings {
         this._endTour = () => {
             this._tourIdx = -1;
             if (this.tour.overlay) this.tour.overlay.hidden = true;
-            // Restore panel visibility that was temporarily shown for the tour
-            if (this._tourStepsRestore !== undefined) {
-                const el = document.getElementById('panelSteps');
-                if (el) el.hidden = this._tourStepsRestore;
-                this._tourStepsRestore = undefined;
-            }
-            if (this._tourControlsRestore !== undefined) {
-                const el = document.getElementById('panelControls');
-                if (el) el.hidden = this._tourControlsRestore;
-                this._tourControlsRestore = undefined;
+            if (this._originalMode) {
+                const orig = this._originalMode;
+                this._originalMode = null;
+                this.o.setMode(orig);
             }
         };
         this._startTour = () => {
             this._endTour();
-            // Temporarily show panels hidden in Help mode so the tour can highlight them
-            const stepsEl = document.getElementById('panelSteps');
-            const controlsEl = document.getElementById('panelControls');
-            this._tourStepsRestore = stepsEl ? stepsEl.hidden : undefined;
-            this._tourControlsRestore = controlsEl ? controlsEl.hidden : undefined;
-            if (stepsEl) stepsEl.hidden = false;
-            if (controlsEl) controlsEl.hidden = false;
+            this._originalMode = this.o.mode;
+            this.o.setMode('Tutorial');
             this._tourIdx = -1;
             nextTour();
         };
@@ -379,12 +390,38 @@ class UiBindings {
         this.tour.next?.addEventListener('click', nextTour);
         this.tour.back?.addEventListener('click', prevTour);
         this.tour.skip?.addEventListener('click', () => { this.soundSynth.playClick(); this._endTour(); });
+        this.tour.overlay?.addEventListener('click', (e) => {
+            if (e.target === this.tour.overlay || e.target.classList.contains('hm-tour-mask')) {
+                this.soundSynth.playClick();
+                this._endTour();
+            }
+        });
         window.addEventListener('resize', positionTour);
 
         // Keyboard shortcuts
         window.addEventListener('keydown', (e) => {
             // Ignore shortcut when user is typing in skin hex color input
             if (document.activeElement?.id === 'hmSkinHex') return;
+            
+            if (e.key === 'Escape' && this._tourIdx >= 0) {
+                this.soundSynth.playClick();
+                this._endTour();
+                e.preventDefault();
+                return;
+            }
+            
+            if (this._tourIdx >= 0) {
+                if (e.key === 'ArrowRight') {
+                    nextTour();
+                    e.preventDefault();
+                    return;
+                }
+                if (e.key === 'ArrowLeft') {
+                    prevTour();
+                    e.preventDefault();
+                    return;
+                }
+            }
             
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.soundSynth.playClick(); this.o.next(); }
             if (e.key === 'A' || e.key === 'a') { this.soundSynth.playClick(); this._toggleAuto(); }
@@ -1320,9 +1357,44 @@ class UiBindings {
             
             // Contextual help content for Tutorial vs Arithmetic
             if (helpContent) {
-                const tourBtn = `<div class="hm-help-block" style="display:flex; justify-content:flex-end;"><button id="btnStartTour" class="hm-btn hm-btn-primary">${window.i18n.t('help.startTour')}</button></div>`;
-                helpContent.innerHTML = tourBtn;
+                let html = `<div class="hm-help-block" style="display:flex; justify-content:flex-end;"><button id="btnStartTour" class="hm-btn hm-btn-primary">${window.i18n.t('help.startTour')}</button></div>`;
+                
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+                if (!isStandalone) {
+                    html += `<div class="hm-help-block" style="display:flex; align-items:center; justify-content:space-between; margin-top: 10px;">
+                        <span style="font-size:14px; font-weight:500;">${window.i18n.t('help.installPrompt')}</span>
+                        <button id="btnHelpInstall" class="hm-btn hm-btn-primary">${window.i18n.t('install.widgetBtn')}</button>
+                    </div>`;
+                }
+
+                // Add GitHub link row
+                html += `<div class="hm-help-block" style="display:flex; align-items:center; justify-content:space-between; margin-top: 10px;">
+                    <span style="font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:var(--hm-text);"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        <span>${window.i18n.t('help.github')}</span>
+                    </span>
+                    <a href="https://github.com/bizzkoot/Hand-Math" target="_blank" rel="noopener" class="hm-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">${window.i18n.t('help.viewCode')}</a>
+                </div>`;
+
+                helpContent.innerHTML = html;
                 helpContent.querySelector('#btnStartTour')?.addEventListener('click', () => { this._startTour(); });
+                helpContent.querySelector('#btnHelpInstall')?.addEventListener('click', () => {
+                    this.soundSynth.playClick();
+                    if (this._deferredPrompt) {
+                        this._deferredPrompt.prompt();
+                        this._deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                if (this.pwaInstallWidget) this.pwaInstallWidget.style.display = 'none';
+                            }
+                            this._deferredPrompt = null;
+                        });
+                    } else {
+                        this._updateInstallModalText();
+                        if (this.installModal) {
+                            this.installModal.hidden = false;
+                        }
+                    }
+                });
             }
         }
 
@@ -1648,6 +1720,97 @@ class UiBindings {
         }
         this._updateScreenWakeButton();
     }
+
+    _setupPWAInstallWidget() {
+        this.pwaInstallWidget = document.getElementById('pwaInstallWidget');
+        this.btnDismissInstall = document.getElementById('btnDismissInstall');
+        this.btnTriggerInstall = document.getElementById('btnTriggerInstall');
+        
+        this.installModal = document.getElementById('installModal');
+        this.installClose = document.getElementById('installClose');
+        this.installGotIt = document.getElementById('installGotIt');
+        this.installInstructionText = document.getElementById('installInstructionText');
+
+        if (!this.pwaInstallWidget) return;
+
+        this._deferredPrompt = null;
+
+        // Listen for beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this._deferredPrompt = e;
+            
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+            const isDismissed = localStorage.getItem('hm-dismiss-install') === 'true';
+            
+            if (!isStandalone && !isDismissed) {
+                this.pwaInstallWidget.style.display = 'flex';
+            }
+        });
+
+        // Fallback check: if on mobile/tablet browser and not standalone and not dismissed, show widget to guide user
+        const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        const isDismissed = localStorage.getItem('hm-dismiss-install') === 'true';
+        
+        if (isMobileOrTablet && !isStandalone && !isDismissed) {
+            this.pwaInstallWidget.style.display = 'flex';
+        }
+
+        // Install action button
+        this.btnTriggerInstall.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            if (this._deferredPrompt) {
+                this._deferredPrompt.prompt();
+                this._deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        this.pwaInstallWidget.style.display = 'none';
+                    }
+                    this._deferredPrompt = null;
+                });
+            } else {
+                // Show manual instructions modal
+                this._updateInstallModalText();
+                if (this.installModal) {
+                    this.installModal.hidden = false;
+                }
+            }
+        });
+
+        // Dismiss action button
+        this.btnDismissInstall.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            this.pwaInstallWidget.style.display = 'none';
+            localStorage.setItem('hm-dismiss-install', 'true');
+        });
+
+        // Close modal buttons
+        const closeModal = () => {
+            if (this.installModal) {
+                this.installModal.hidden = true;
+            }
+        };
+        this.installClose?.addEventListener('click', () => { this.soundSynth.playClick(); closeModal(); });
+        this.installGotIt?.addEventListener('click', () => { this.soundSynth.playClick(); closeModal(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Update instructions text when language switcher changes
+        if (window.i18n) {
+            window.i18n.onChange(() => {
+                this._updateInstallModalText();
+            });
+        }
+    }
+
+    _updateInstallModalText() {
+        if (!this.installInstructionText || !window.i18n) return;
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const textKey = isAndroid ? 'install.modalBodyAndroid' : 'install.modalBodyGeneric';
+        this.installInstructionText.innerText = window.i18n.t(textKey);
+    }
+
 }
 
 if (typeof module !== 'undefined' && module.exports) {
