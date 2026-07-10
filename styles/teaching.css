@@ -472,9 +472,9 @@
 
 /* Guided Tour */
 .hm-tour[hidden] { display:none; }
-.hm-tour { position:fixed; inset:0; z-index:1100; pointer-events:none; }
-.hm-tour-mask { position:absolute; inset:0; background:rgba(0,0,0,0.65); backdrop-filter: blur(1px); }
-.hm-tour-focus { position:absolute; border:2px solid var(--hm-accent); border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,0.65); background:transparent; transition: all 0.3s ease; }
+.hm-tour { position:fixed; inset:0; z-index:1100; pointer-events:auto; }
+.hm-tour-mask { position:absolute; inset:0; background:transparent; }
+.hm-tour-focus { position:absolute; border:2px solid var(--hm-accent); border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,0.65); background:transparent; pointer-events:none; transition: all 0.3s ease; }
 .hm-tour-pop { 
     position:absolute; 
     max-width:300px; 

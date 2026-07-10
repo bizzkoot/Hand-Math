@@ -295,22 +295,41 @@ class UiBindings {
 
         // Tour wiring
         this._tourIdx = -1;
+        this._originalMode = null;
         const tourSteps = () => ([
             { sel: '#scene-container', title: window.i18n.t('tour.step1Title'), text: window.i18n.t('tour.step1Text') },
-            { sel: '#panelSteps', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
-            { sel: '#panelControls', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') }
+            { sel: '#modeTabs', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
+            { sel: '#teachingPanel', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') },
+            { sel: '#panelSteps', title: window.i18n.t('tour.step4Title'), text: window.i18n.t('tour.step4Text') },
+            { sel: '#panelControls', title: window.i18n.t('tour.step5Title'), text: window.i18n.t('tour.step5Text') },
+            { sel: '#btnAuto', title: window.i18n.t('tour.step6Title'), text: window.i18n.t('tour.step6Text') },
+            { sel: '#btnSettings', title: window.i18n.t('tour.step7Title'), text: window.i18n.t('tour.step7Text') }
         ]);
         const positionTour = () => {
             if (this._tourIdx < 0) return;
             const step = tourSteps()[this._tourIdx];
-            const el = document.querySelector(step.sel);
+            let sel = step.sel;
+            if (sel === '#btnSettings') {
+                const btn = document.querySelector(sel);
+                if (btn && getComputedStyle(btn).display === 'none') {
+                    sel = '#configGroup';
+                }
+            }
+            const el = document.querySelector(sel);
             if (!el) return this._endTour();
             const rect = el.getBoundingClientRect();
             Object.assign(this.tour.focus.style, {
                 left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px'
             });
-            const popW = 320;
-            const popH = 140;
+
+            // Set content first so offsetWidth and offsetHeight can be read accurately
+            this.tour.title.textContent = step.title;
+            this.tour.text.textContent = step.text;
+            this.tour.next.textContent = (this._tourIdx >= tourSteps().length - 1) ? window.i18n.t('tour.done') : window.i18n.t('tour.next');
+
+            const popW = this.tour.pop.offsetWidth || 300;
+            const popH = this.tour.pop.offsetHeight || 140;
+
             // Try right of target, then left
             let popX;
             if (rect.right + 12 + popW <= window.innerWidth) {
@@ -329,10 +348,12 @@ class UiBindings {
             } else {
                 popY = Math.max(8, Math.min(rect.bottom + 12, window.innerHeight - popH - 8));
             }
+
+            // Strictly clamp coordinates to screen boundaries to prevent overflow/cutoff
+            popX = Math.max(8, Math.min(popX, window.innerWidth - popW - 8));
+            popY = Math.max(8, Math.min(popY, window.innerHeight - popH - 8));
+
             Object.assign(this.tour.pop.style, { left: popX + 'px', top: popY + 'px' });
-            this.tour.title.textContent = step.title;
-            this.tour.text.textContent = step.text;
-            this.tour.next.textContent = (this._tourIdx >= tourSteps().length - 1) ? window.i18n.t('tour.done') : window.i18n.t('tour.next');
         };
         const nextTour = () => {
             this.soundSynth.playClick();
@@ -352,27 +373,16 @@ class UiBindings {
         this._endTour = () => {
             this._tourIdx = -1;
             if (this.tour.overlay) this.tour.overlay.hidden = true;
-            // Restore panel visibility that was temporarily shown for the tour
-            if (this._tourStepsRestore !== undefined) {
-                const el = document.getElementById('panelSteps');
-                if (el) el.hidden = this._tourStepsRestore;
-                this._tourStepsRestore = undefined;
-            }
-            if (this._tourControlsRestore !== undefined) {
-                const el = document.getElementById('panelControls');
-                if (el) el.hidden = this._tourControlsRestore;
-                this._tourControlsRestore = undefined;
+            if (this._originalMode) {
+                const orig = this._originalMode;
+                this._originalMode = null;
+                this.o.setMode(orig);
             }
         };
         this._startTour = () => {
             this._endTour();
-            // Temporarily show panels hidden in Help mode so the tour can highlight them
-            const stepsEl = document.getElementById('panelSteps');
-            const controlsEl = document.getElementById('panelControls');
-            this._tourStepsRestore = stepsEl ? stepsEl.hidden : undefined;
-            this._tourControlsRestore = controlsEl ? controlsEl.hidden : undefined;
-            if (stepsEl) stepsEl.hidden = false;
-            if (controlsEl) controlsEl.hidden = false;
+            this._originalMode = this.o.mode;
+            this.o.setMode('Tutorial');
             this._tourIdx = -1;
             nextTour();
         };
@@ -380,12 +390,38 @@ class UiBindings {
         this.tour.next?.addEventListener('click', nextTour);
         this.tour.back?.addEventListener('click', prevTour);
         this.tour.skip?.addEventListener('click', () => { this.soundSynth.playClick(); this._endTour(); });
+        this.tour.overlay?.addEventListener('click', (e) => {
+            if (e.target === this.tour.overlay || e.target.classList.contains('hm-tour-mask')) {
+                this.soundSynth.playClick();
+                this._endTour();
+            }
+        });
         window.addEventListener('resize', positionTour);
 
         // Keyboard shortcuts
         window.addEventListener('keydown', (e) => {
             // Ignore shortcut when user is typing in skin hex color input
             if (document.activeElement?.id === 'hmSkinHex') return;
+            
+            if (e.key === 'Escape' && this._tourIdx >= 0) {
+                this.soundSynth.playClick();
+                this._endTour();
+                e.preventDefault();
+                return;
+            }
+            
+            if (this._tourIdx >= 0) {
+                if (e.key === 'ArrowRight') {
+                    nextTour();
+                    e.preventDefault();
+                    return;
+                }
+                if (e.key === 'ArrowLeft') {
+                    prevTour();
+                    e.preventDefault();
+                    return;
+                }
+            }
             
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.soundSynth.playClick(); this.o.next(); }
             if (e.key === 'A' || e.key === 'a') { this.soundSynth.playClick(); this._toggleAuto(); }
