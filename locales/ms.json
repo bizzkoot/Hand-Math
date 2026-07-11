@@ -100,6 +100,8 @@
   "modal.gotIt": "Faham",
   "tour.step1Title": "Tangan 3D",
   "tour.step1Text": "Berinteraksi dengan tangan 3D di sini. Seret untuk memutar, cubit/skrol untuk zum, dan tonton jari bergerak.",
+  "tour.stepLevelTitle": "Tahap Operan",
+  "tour.stepLevelText": "Pilih julat maksimum untuk nombor dalam mod Tutorial, Aritmetik, atau Cabaran di sini (daripada 1-20 sehingga 1-99).",
   "tour.step2Title": "Tab Navigasi",
   "tour.step2Text": "Tukar mod di sini: Tutorial (belajar mengira), Aritmetik (latihan tambah/tolak), dan Cabaran (permainan padanan).",
   "tour.step3Title": "Panel Sisi",

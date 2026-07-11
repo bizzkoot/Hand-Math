@@ -100,6 +100,8 @@
   "modal.gotIt": "Got it",
   "tour.step1Title": "3D Hands",
   "tour.step1Text": "Interact with the 3D hands here. Drag to rotate, pinch/scroll to zoom, and watch the fingers move.",
+  "tour.stepLevelTitle": "Operand Level",
+  "tour.stepLevelText": "Select the maximum range for numbers in Tutorial, Arithmetic, or Challenge modes here (from 1-20 up to 1-99).",
   "tour.step2Title": "Navigation Tabs",
   "tour.step2Text": "Switch modes here: Tutorial (learn counting), Arithmetic (practice addition/subtraction), and Challenge (matching games).",
   "tour.step3Title": "Sidebar Panel",

@@ -102,12 +102,12 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
     for (const p of samples) {
       expect(p.a).toBeGreaterThanOrEqual(1);
       expect(p.a).toBeLessThanOrEqual(20);
-      expect(p.b).toBeGreaterThanOrEqual(0);
+      expect(p.b).toBeGreaterThanOrEqual(1);
       expect(p.b).toBeLessThanOrEqual(20);
       if (p.op === '+') {
         expect(p.a + p.b).toBeLessThanOrEqual(40);
       } else {
-        expect(p.a).toBeGreaterThanOrEqual(p.b);
+        expect(p.a).toBeGreaterThan(p.b);
       }
     }
 
@@ -133,12 +133,12 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
     for (const p of samples) {
       expect(p.a).toBeGreaterThanOrEqual(1);
       expect(p.a).toBeLessThanOrEqual(99);
-      expect(p.b).toBeGreaterThanOrEqual(0);
+      expect(p.b).toBeGreaterThanOrEqual(1);
       expect(p.b).toBeLessThanOrEqual(99);
       if (p.op === '+') {
         expect(p.a + p.b).toBeLessThanOrEqual(99);
       } else {
-        expect(p.a).toBeGreaterThanOrEqual(p.b);
+        expect(p.a).toBeGreaterThan(p.b);
       }
     }
 
@@ -260,9 +260,24 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
       return out;
     });
     for (const p of samples) {
-      expect(p.target).toBeGreaterThanOrEqual(0);
+      expect(p.target).toBeGreaterThanOrEqual(1);
       expect(p.target).toBeLessThanOrEqual(99);
     }
+
+    await page.evaluate(() => localStorage.removeItem('hm_operand_level'));
+  });
+
+  test('respects the saved operand level on initial page load without reselection', async ({ page }) => {
+    const local = process.env.HM_LOCAL_FILE === '1';
+    await page.addInitScript(() => {
+      try { localStorage.setItem('hm_operand_level', '1'); } catch (_) {}
+    });
+    await page.goto(local ? 'index.html' : '/index.html');
+    await page.waitForFunction(() => window.handMathApp && window.handMathApp.handController && window.TEST_API, { timeout: 30000 });
+
+    const initialNum = await page.evaluate(() => window.__HM__.orchestrator.problem.a);
+    expect(initialNum).toBeGreaterThanOrEqual(1);
+    expect(initialNum).toBeLessThanOrEqual(20);
 
     await page.evaluate(() => localStorage.removeItem('hm_operand_level'));
   });

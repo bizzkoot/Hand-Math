@@ -122,6 +122,7 @@ class UiBindings {
                 this.o.setProblem(a, b, op);
             });
         }
+        this._onOperandLevelChanged();
         this._setupPWAInstallWidget();
     }
 
@@ -133,7 +134,12 @@ class UiBindings {
         this.tabHelp = document.getElementById('tabHelp');
 
         this.tabTutorial.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Tutorial'); });
-        this.tabArithmetic.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Arithmetic'); });
+        this.tabArithmetic.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            const prob = this._randomValidPractice();
+            this.o.setProblem(prob.a, prob.b, prob.op);
+            this.o.setMode('Arithmetic');
+        });
         this.tabChallenge?.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Challenge'); });
         this.tabHelp.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Help'); });
 
@@ -325,6 +331,7 @@ class UiBindings {
         this._originalMode = null;
         const tourSteps = () => ([
             { sel: '#scene-container', title: window.i18n.t('tour.step1Title'), text: window.i18n.t('tour.step1Text') },
+            { sel: '#operandLevelBadge', title: window.i18n.t('tour.stepLevelTitle'), text: window.i18n.t('tour.stepLevelText') },
             { sel: '#modeTabs', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
             { sel: '#teachingPanel', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') },
             { sel: '#panelSteps', title: window.i18n.t('tour.step4Title'), text: window.i18n.t('tour.step4Text') },
@@ -1113,9 +1120,9 @@ class UiBindings {
     _generateChallengeProblem(tier) {
         const opMax = getOperandLevelMax(this.operandLevel);
         if (tier === 0) {
-            // Easy: Single hand 0-9, constrained by operand level.
+            // Easy: Single hand 1-9, constrained by operand level.
             const onesMax = Math.min(9, opMax);
-            const val = Math.floor(Math.random() * (onesMax + 1));
+            const val = 1 + Math.floor(Math.random() * onesMax);
             const useTens = val > 0 && Math.random() < 0.3 && opMax >= 10;
             if (useTens) {
                 return { prompt: window.i18n.t('challenge.promptShow', {value: val * 10}), target: val * 10 };
@@ -1230,22 +1237,23 @@ class UiBindings {
                     // Level 1: Single-hand operations only (Ones or Tens separately),
                     // constrained to the new operand range.
                     if (Math.random() < 0.5) {
-                        // Ones only: A in 1..min(9, opMax), B in 1..A
+                        // Ones only: A in 2..min(9, opMax), B in 1..A-1
                         const onesMax = Math.min(9, opMax);
-                        if (onesMax < 1) continue;
-                        a = 1 + Math.floor(Math.random() * onesMax);
-                        b = Math.floor(Math.random() * (a + 1));
+                        if (onesMax < 2) continue;
+                        a = 2 + Math.floor(Math.random() * (onesMax - 1));
+                        b = 1 + Math.floor(Math.random() * (a - 1));
                     } else {
-                        // Tens only: A multiple of 10, B multiple of 10, B <= A
+                        // Tens only: A multiple of 10, B multiple of 10, B < A
                         const tensMax = Math.min(9, Math.floor(opMax / 10));
-                        if (tensMax < 1) continue;
-                        a = (1 + Math.floor(Math.random() * tensMax)) * 10;
-                        b = Math.floor(Math.random() * (a / 10 + 1)) * 10;
+                        if (tensMax < 2) continue;
+                        a = (2 + Math.floor(Math.random() * (tensMax - 1))) * 10;
+                        b = (1 + Math.floor(Math.random() * (a / 10 - 1))) * 10;
                     }
                 } else if (level === 2) {
-                    // Level 2: Combined, no borrow, both operands within opMax
-                    a = 1 + Math.floor(Math.random() * opMax);
-                    b = Math.floor(Math.random() * (a + 1));
+                    // Level 2: Combined, no borrow, both operands within opMax, target >= 1
+                    if (opMax < 2) continue;
+                    a = 2 + Math.floor(Math.random() * (opMax - 1));
+                    b = 1 + Math.floor(Math.random() * (a - 1));
                     const aR = a % 10, bR = b % 10;
                     const borrow = aR < bR;
                     if (borrow) continue;
@@ -1253,7 +1261,7 @@ class UiBindings {
                     // Level 3: Mixed borrow (forces a borrow), both operands within opMax
                     a = 20 + Math.floor(Math.random() * Math.max(1, (opMax - 19)));
                     b = 10 + Math.floor(Math.random() * Math.max(1, (a - 9)));
-                    if (b > a) continue;
+                    if (b >= a) continue;
                     const aR = a % 10, bR = b % 10;
                     const borrow = aR < bR;
                     if (!borrow) continue;

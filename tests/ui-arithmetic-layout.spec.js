@@ -45,7 +45,7 @@ test.describe('Teaching UI - Phone-portrait panel layout (Tutorial / Arithmetic)
       await expect(page.locator('#panelInfoBtn')).toHaveAttribute('aria-expanded', 'true');
 
       // (5) Tapping outside (on the scene) hides it again
-      await page.click('#scene', { position: { x: 20, y: 20 } });
+      await page.click('#scene', { position: { x: 150, y: 150 } });
       await expect(page.locator('#teachingPanel')).not.toHaveClass(/is-info-open/);
       await expect(page.locator('#panelQuestion')).toBeHidden();
       await expect(page.locator('#panelExplanation')).toBeHidden();
