@@ -3,16 +3,20 @@
     function ready(){ return window.__HM__ && window.handMathApp; }
     function ensure(cb){ if(!ready()) return setTimeout(()=>ensure(cb),50); cb(); }
     ensure(()=>{
-        const { orchestrator, adapter } = window.__HM__;
+        const { orchestrator, adapter, ui } = window.__HM__;
         window.TEST_API = {
             setAutoPlay(ms){ orchestrator.engine.setAuto(true, ms ?? 900); },
             clearAuto(){ orchestrator.engine.setAuto(false); },
             nextStep(){ return orchestrator.next(); },
-            prevStep(){ orchestrator.prev(); },
+            prevStep(){ return orchestrator.prev(); },
             reset(){ orchestrator.reset(); },
             setProblem({a,b,op}){ orchestrator.setProblem(a,b,op ?? orchestrator.problem.op); },
             getState(){ return orchestrator.state(); },
             waitForSettled(ms){ return adapter.awaitSettled({ timeoutMs: ms ?? 2000 }); },
+            // Operand range level (1..5). Set or read.
+            setOperandLevel(n){ if (ui) ui.setOperandLevel(n); return ui ? ui.operandLevel : null; },
+            getOperandLevel(){ return ui ? ui.operandLevel : null; },
+            getOperandLevelMax(n){ return ui ? ui.getOperandLevelMax(n) : null; },
             // Stress test skin tone changes; ensure animation continues smoothly
             skinToneStress(opts){
                 const app = window.handMathApp;
