@@ -4,6 +4,9 @@ const { test, expect } = require('@playwright/test');
 test.describe('Teaching UI - Arithmetic (+ carry)', () => {
   test('47 + 38 → 85 with carry cue', async ({ page }) => {
     const local = process.env.HM_LOCAL_FILE === '1';
+    await page.addInitScript(() => {
+      try { localStorage.setItem('hm_operand_level', '5'); } catch (_) {}
+    });
     await page.goto(local ? 'index.html' : '/index.html');
     await page.waitForFunction(() => window.handMathApp && window.handMathApp.handController, { timeout: 30000 });
     await page.waitForSelector('#teachingPanel');
@@ -41,5 +44,6 @@ test.describe('Teaching UI - Arithmetic (+ carry)', () => {
     }
 
     await page.screenshot({ path: 'test-results/ui-arith-add-final.png', fullPage: true });
+    await page.evaluate(() => localStorage.removeItem('hm_operand_level'));
   });
 });
