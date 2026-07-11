@@ -81,12 +81,35 @@ const SPEED_MIN = 0.1;
 const SPEED_MAX = 3.0;
 const SPEED_STEP = 0.1;
 
+// Operand range level system (Issue #1 rebalanced).
+// Five steps; each level doubles-and-rounds the operand range up to the
+// natural ceiling of 99 (left hand = tens 0-9, right hand = ones 0-9).
+//   Level 1: 1 - 20
+//   Level 2: 1 - 40
+//   Level 3: 1 - 60
+//   Level 4: 1 - 80
+//   Level 5: 1 - 99
+const OPERAND_LEVEL_COUNT = 5;
+const OPERAND_LEVEL_KEY = 'hm_operand_level';
+const OPERAND_LEVEL_DEFAULT = 1;
+
+function getOperandLevelMax(level) {
+    const n = Math.max(1, Math.min(OPERAND_LEVEL_COUNT, level | 0));
+    // Formula: Level N = 1 to min(N * 20, 99). Caps at 99 for L5.
+    return Math.min(n * 20, 99);
+}
+
 class UiBindings {
     constructor(orchestrator) {
         this.o = orchestrator;
         this.soundSynth = new SoundSynth();
         this._speed = 1.0;
         this._ttsEnabled = false;
+        // Operand range level (1..5). Restored from localStorage, else default 1.
+        const savedLevel = parseInt(localStorage.getItem(OPERAND_LEVEL_KEY) || '', 10);
+        this.operandLevel = (savedLevel >= 1 && savedLevel <= OPERAND_LEVEL_COUNT)
+            ? savedLevel
+            : OPERAND_LEVEL_DEFAULT;
         this._wire();
         this._initChallenge();
         this._render();
@@ -99,6 +122,7 @@ class UiBindings {
                 this.o.setProblem(a, b, op);
             });
         }
+        this._onOperandLevelChanged();
         this._setupPWAInstallWidget();
     }
 
@@ -110,7 +134,12 @@ class UiBindings {
         this.tabHelp = document.getElementById('tabHelp');
 
         this.tabTutorial.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Tutorial'); });
-        this.tabArithmetic.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Arithmetic'); });
+        this.tabArithmetic.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            const prob = this._randomValidPractice();
+            this.o.setProblem(prob.a, prob.b, prob.op);
+            this.o.setMode('Arithmetic');
+        });
         this.tabChallenge?.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Challenge'); });
         this.tabHelp.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Help'); });
 
@@ -166,6 +195,10 @@ class UiBindings {
             this._practice = this._practice || { filter: 'both', level: 2 };
             this._practice.level = parseInt(this.levelSel.value) || 2;
         });
+
+        // Operand range level (top-left badge in 3D scene). User-facing;
+        // controls the operand range used by Practice and Challenge generators.
+        this._initOperandLevelUI();
 
         // Tour elements
         this.tour = {
@@ -298,6 +331,7 @@ class UiBindings {
         this._originalMode = null;
         const tourSteps = () => ([
             { sel: '#scene-container', title: window.i18n.t('tour.step1Title'), text: window.i18n.t('tour.step1Text') },
+            { sel: '#operandLevelBadge', title: window.i18n.t('tour.stepLevelTitle'), text: window.i18n.t('tour.stepLevelText') },
             { sel: '#modeTabs', title: window.i18n.t('tour.step2Title'), text: window.i18n.t('tour.step2Text') },
             { sel: '#teachingPanel', title: window.i18n.t('tour.step3Title'), text: window.i18n.t('tour.step3Text') },
             { sel: '#panelSteps', title: window.i18n.t('tour.step4Title'), text: window.i18n.t('tour.step4Text') },
@@ -1084,28 +1118,37 @@ class UiBindings {
     }
 
     _generateChallengeProblem(tier) {
+        const opMax = getOperandLevelMax(this.operandLevel);
         if (tier === 0) {
-            // Easy: Single hand 0-9
-            const val = Math.floor(Math.random() * 10);
-            const useTens = val > 0 && Math.random() < 0.3;
+            // Easy: Single hand 1-9, constrained by operand level.
+            const onesMax = Math.min(9, opMax);
+            const val = 1 + Math.floor(Math.random() * onesMax);
+            const useTens = val > 0 && Math.random() < 0.3 && opMax >= 10;
             if (useTens) {
                 return { prompt: window.i18n.t('challenge.promptShow', {value: val * 10}), target: val * 10 };
             }
             return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
         } else if (tier === 1) {
-            // Medium: Two-hand 0-99, no carry/borrow
-            const val = Math.floor(Math.random() * 90) + 10;
+            // Medium: Two-hand, no carry/borrow. Constrained by operand level.
+            if (opMax < 10) {
+                // Fall back to single-hand style since two-hand needs ≥ 10
+                return this._generateChallengeProblem(0);
+            }
+            const val = 10 + Math.floor(Math.random() * Math.max(1, (opMax - 9)));
             return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
         } else {
-            // Hard: Arithmetic with carry/borrow
+            // Hard: Arithmetic with carry/borrow, both operands within opMax.
             const op = Math.random() < 0.5 ? '+' : '-';
             if (op === '+') {
                 let a, b;
                 for (let i = 0; i < 200; i++) {
-                    a = Math.floor(Math.random() * 80) + 10;
-                    const maxB = 99 - a;
+                    const aMin = 10;
+                    const aMax = Math.max(aMin, opMax - 5);
+                    if (aMax < aMin) continue;
+                    a = aMin + Math.floor(Math.random() * (aMax - aMin + 1));
+                    const maxB = Math.min(opMax, 99 - a);
                     if (maxB < 5) continue;
-                    b = Math.floor(Math.random() * (maxB - 4)) + 5;
+                    b = 5 + Math.floor(Math.random() * (maxB - 4));
                     const aR = a % 10, bR = b % 10;
                     if ((aR + bR) >= 10) {
                         return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '+', b}), target: a + b };
@@ -1115,8 +1158,13 @@ class UiBindings {
             } else {
                 let a, b;
                 for (let i = 0; i < 200; i++) {
-                    a = Math.floor(Math.random() * 80) + 20;
-                    b = Math.floor(Math.random() * (a - 9)) + 10;
+                    const aMin = 20;
+                    const aMax = Math.max(aMin, opMax);
+                    if (aMax < aMin) continue;
+                    a = aMin + Math.floor(Math.random() * (aMax - aMin + 1));
+                    const bMax = Math.max(10, a - 1);
+                    if (bMax < 10) continue;
+                    b = 10 + Math.floor(Math.random() * (bMax - 9));
                     const aR = a % 10, bR = b % 10;
                     if (aR < bR) {
                         return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '−', b}), target: a - b };
@@ -1127,10 +1175,13 @@ class UiBindings {
         }
     }
 
-    // Practice generator honoring filter (add/sub/both) and level
+    // Practice generator honoring filter (add/sub/both), internal 3-level
+    // carry/borrow logic (the existing #levelSel), and the new 5-level
+    // operand-range system (this.operandLevel).
     _randomValidPractice() {
         if (!this._practice) this._practice = { filter: 'both', level: 2 };
         const level = this._practice.level || 2;
+        const opMax = getOperandLevelMax(this.operandLevel);
         const chooseOp = () => {
             if (this._practice.filter === 'add') return '+';
             if (this._practice.filter === 'sub') return '-';
@@ -1141,30 +1192,37 @@ class UiBindings {
             let a, b;
             for (let i = 0; i < 500; i++) {
                 if (level === 1) {
-                    // Level 1: Single-hand operations only (Ones or Tens separately)
+                    // Level 1: Single-hand operations only (Ones or Tens separately),
+                    // constrained to the new operand range.
                     if (Math.random() < 0.5) {
-                        // Ones only: A, B in 0-9, sum <= 9
-                        a = Math.floor(Math.random() * 10);
-                        b = Math.floor(Math.random() * (10 - a));
+                        // Ones only: A, B in 1..min(9, opMax), A+B <= 9
+                        const onesMax = Math.min(9, opMax);
+                        if (onesMax < 1) continue;
+                        a = 1 + Math.floor(Math.random() * onesMax);
+                        b = 1 + Math.floor(Math.random() * Math.max(1, (10 - a)));
+                        if (a + b > 9) continue;
                     } else {
-                        // Tens only: multiples of 10, sum <= 90
-                        a = Math.floor(Math.random() * 10) * 10;
-                        b = Math.floor(Math.random() * (10 - a / 10)) * 10;
+                        // Tens only: multiples of 10, A, B in opMax, sum <= 90
+                        const tensMax = Math.min(9, Math.floor(opMax / 10));
+                        if (tensMax < 1) continue;
+                        a = (1 + Math.floor(Math.random() * tensMax)) * 10;
+                        b = (1 + Math.floor(Math.random() * Math.max(1, (10 - a / 10)))) * 10;
                     }
                 } else if (level === 2) {
-                    // Level 2: Combined, no carry
-                    a = Math.floor(Math.random() * 100);
-                    const maxB = 99 - a;
-                    b = Math.floor(Math.random() * (maxB + 1));
+                    // Level 2: Combined, no carry, both operands within opMax
+                    a = 1 + Math.floor(Math.random() * opMax);
+                    const maxB = Math.min(opMax, 99 - a);
+                    if (maxB < 1) continue;
+                    b = 1 + Math.floor(Math.random() * maxB);
                     const aR = a % 10, bR = b % 10;
                     const carry = (aR + bR) >= 10;
                     if (carry) continue;
                 } else {
-                    // Level 3: Mixed carry (forces a carry)
-                    a = Math.floor(Math.random() * 90) + 10;
-                    const maxB = 99 - a;
+                    // Level 3: Mixed carry (forces a carry), both operands within opMax
+                    a = 10 + Math.floor(Math.random() * Math.max(1, (opMax - 9)));
+                    const maxB = Math.min(opMax, 99 - a);
                     if (maxB < 5) continue;
-                    b = Math.floor(Math.random() * (maxB - 4)) + 5;
+                    b = 5 + Math.floor(Math.random() * (maxB - 4));
                     const aR = a % 10, bR = b % 10;
                     const carry = (aR + bR) >= 10;
                     if (!carry) continue;
@@ -1176,27 +1234,34 @@ class UiBindings {
             let a, b;
             for (let i = 0; i < 500; i++) {
                 if (level === 1) {
-                    // Level 1: Single-hand operations only (Ones or Tens separately)
+                    // Level 1: Single-hand operations only (Ones or Tens separately),
+                    // constrained to the new operand range.
                     if (Math.random() < 0.5) {
-                        // Ones only: A in 0-9, B <= A
-                        a = Math.floor(Math.random() * 10);
-                        b = Math.floor(Math.random() * (a + 1));
+                        // Ones only: A in 2..min(9, opMax), B in 1..A-1
+                        const onesMax = Math.min(9, opMax);
+                        if (onesMax < 2) continue;
+                        a = 2 + Math.floor(Math.random() * (onesMax - 1));
+                        b = 1 + Math.floor(Math.random() * (a - 1));
                     } else {
-                        // Tens only: A multiple of 10, B multiple of 10, B <= A
-                        a = Math.floor(Math.random() * 10) * 10;
-                        b = Math.floor(Math.random() * (a / 10 + 1)) * 10;
+                        // Tens only: A multiple of 10, B multiple of 10, B < A
+                        const tensMax = Math.min(9, Math.floor(opMax / 10));
+                        if (tensMax < 2) continue;
+                        a = (2 + Math.floor(Math.random() * (tensMax - 1))) * 10;
+                        b = (1 + Math.floor(Math.random() * (a / 10 - 1))) * 10;
                     }
                 } else if (level === 2) {
-                    // Level 2: Combined, no borrow
-                    a = Math.floor(Math.random() * 100);
-                    b = Math.floor(Math.random() * (a + 1));
+                    // Level 2: Combined, no borrow, both operands within opMax, target >= 1
+                    if (opMax < 2) continue;
+                    a = 2 + Math.floor(Math.random() * (opMax - 1));
+                    b = 1 + Math.floor(Math.random() * (a - 1));
                     const aR = a % 10, bR = b % 10;
                     const borrow = aR < bR;
                     if (borrow) continue;
                 } else {
-                    // Level 3: Mixed borrow (forces a borrow)
-                    a = Math.floor(Math.random() * 80) + 20;
-                    b = Math.floor(Math.random() * (a - 9)) + 10;
+                    // Level 3: Mixed borrow (forces a borrow), both operands within opMax
+                    a = 20 + Math.floor(Math.random() * Math.max(1, (opMax - 19)));
+                    b = 10 + Math.floor(Math.random() * Math.max(1, (a - 9)));
+                    if (b >= a) continue;
                     const aR = a % 10, bR = b % 10;
                     const borrow = aR < bR;
                     if (!borrow) continue;
@@ -1213,6 +1278,185 @@ class UiBindings {
         this.mfAdd?.classList.toggle('is-active', which === 'add');
         this.mfSub?.classList.toggle('is-active', which === 'sub');
         this.mfBoth?.classList.toggle('is-active', which === 'both');
+    }
+
+    // ---- Operand range level (5 steps, 1..5) ----
+    // The badge lives in the top-left of the 3D scene. Click to open a
+    // popover with 5 options. Selection persists to localStorage and resets
+    // the current problem.
+    _initOperandLevelUI() {
+        this.operandBadge = document.getElementById('operandLevelBadge');
+        this.operandBadgeLabel = document.getElementById('operandLevelLabel');
+        this.operandBadgeRange = document.getElementById('operandLevelRange');
+        this.operandMenu = document.getElementById('operandLevelMenu');
+        if (!this.operandBadge || !this.operandMenu) return;
+
+        this.operandBadge.setAttribute('aria-haspopup', 'listbox');
+        this.operandBadge.setAttribute('aria-expanded', 'false');
+        this.operandMenu.setAttribute('role', 'listbox');
+        this.operandMenu.setAttribute('aria-label', window.i18n?.t('oplevel.aria.menu') || 'Choose operand level');
+
+        // Build 5 options from i18n template keys
+        this.operandMenu.innerHTML = '';
+        for (let n = 1; n <= OPERAND_LEVEL_COUNT; n++) {
+            const li = document.createElement('li');
+            li.className = 'hm-oplevel-option';
+            li.setAttribute('role', 'option');
+            li.setAttribute('data-level', String(n));
+            li.setAttribute('tabindex', '0');
+            const max = getOperandLevelMax(n);
+            li.setAttribute('data-i18n-aria', 'oplevel.aria.option');
+            li.setAttribute('data-i18n-aria-vars', JSON.stringify({ n, min: 1, max }));
+            li.setAttribute('aria-selected', 'false');
+            const labelKey = `oplevel.option.${n}`;
+            const label = (window.i18n && window.i18n.t(labelKey, { n, min: 1, max })) || `Level ${n} (1–${max})`;
+            li.textContent = label;
+            this.operandMenu.appendChild(li);
+        }
+
+        this.operandBadge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.soundSynth.playClick();
+            this._toggleOperandMenu();
+        });
+        this.operandBadge.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.soundSynth.playClick();
+                this._toggleOperandMenu();
+            }
+        });
+
+        this.operandMenu.addEventListener('click', (e) => {
+            const li = e.target.closest('[data-level]');
+            if (!li) return;
+            const n = parseInt(li.getAttribute('data-level'), 10);
+            this.soundSynth.playClick();
+            this.setOperandLevel(n);
+            this._closeOperandMenu();
+        });
+        this.operandMenu.addEventListener('keydown', (e) => {
+            const li = e.target.closest('[data-level]');
+            if (!li) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const n = parseInt(li.getAttribute('data-level'), 10);
+                this.soundSynth.playClick();
+                this.setOperandLevel(n);
+                this._closeOperandMenu();
+            } else if (e.key === 'Escape') {
+                this._closeOperandMenu();
+            }
+        });
+
+        // Outside click closes the menu
+        document.addEventListener('click', (e) => {
+            if (!this.operandMenu || this.operandMenu.hidden) return;
+            if (this.operandBadge.contains(e.target) || this.operandMenu.contains(e.target)) return;
+            this._closeOperandMenu();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.operandMenu && !this.operandMenu.hidden) {
+                this._closeOperandMenu();
+            }
+        });
+
+        // Stop OrbitControls drag from being intercepted by the badge area.
+        this.operandBadge.addEventListener('pointerdown', (e) => e.stopPropagation());
+        this.operandMenu.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+        this._renderOperandLevelUI();
+
+        if (window.i18n) {
+            window.i18n.onChange(() => this._renderOperandLevelUI());
+        }
+    }
+
+    _toggleOperandMenu() {
+        if (!this.operandMenu) return;
+        const isHidden = this.operandMenu.hidden;
+        if (isHidden) this._openOperandMenu(); else this._closeOperandMenu();
+    }
+    _openOperandMenu() {
+        if (!this.operandMenu) return;
+        this.operandMenu.hidden = false;
+        this.operandBadge.setAttribute('aria-expanded', 'true');
+    }
+    _closeOperandMenu() {
+        if (!this.operandMenu) return;
+        this.operandMenu.hidden = true;
+        this.operandBadge.setAttribute('aria-expanded', 'false');
+    }
+
+    setOperandLevel(n) {
+        const clamped = Math.max(1, Math.min(OPERAND_LEVEL_COUNT, n | 0));
+        if (clamped === this.operandLevel) {
+            this._renderOperandLevelUI();
+            this._closeOperandMenu();
+            return;
+        }
+        this.operandLevel = clamped;
+        try { localStorage.setItem(OPERAND_LEVEL_KEY, String(clamped)); } catch (_) {}
+        this._renderOperandLevelUI();
+        // Reset current problem so the new range takes effect immediately.
+        this._onOperandLevelChanged();
+        // Announce for screen readers
+        const max = getOperandLevelMax(clamped);
+        this._announce(window.i18n?.t('oplevel.announce', { n: clamped, min: 1, max }) || `Level ${clamped} selected, numbers 1 to ${max}`);
+    }
+
+    _renderOperandLevelUI() {
+        if (!this.operandBadge) return;
+        const n = this.operandLevel;
+        const max = getOperandLevelMax(n);
+        if (this.operandBadgeLabel) {
+            this.operandBadgeLabel.textContent = (window.i18n?.t('oplevel.label', { n }) || `Level ${n}`);
+        }
+        if (this.operandBadgeRange) {
+            this.operandBadgeRange.textContent = (window.i18n?.t('oplevel.range', { min: 1, max }) || `1–${max}`);
+        }
+        this.operandBadge.setAttribute('data-level', String(n));
+        this.operandBadge.setAttribute('aria-label', window.i18n?.t('oplevel.aria.badge', { n, min: 1, max }) || `Operand level ${n}, click to change`);
+
+        // Update menu item labels and selected state
+        if (this.operandMenu) {
+            for (let i = 0; i < this.operandMenu.children.length; i++) {
+                const li = this.operandMenu.children[i];
+                const ln = parseInt(li.getAttribute('data-level'), 10);
+                const lmax = getOperandLevelMax(ln);
+                const labelKey = `oplevel.option.${ln}`;
+                li.textContent = (window.i18n?.t(labelKey, { n: ln, min: 1, max: lmax })) || `Level ${ln} (1–${lmax})`;
+                li.setAttribute('aria-selected', ln === n ? 'true' : 'false');
+                li.classList.toggle('is-active', ln === n);
+            }
+        }
+    }
+
+    getOperandLevelMax(level) {
+        return getOperandLevelMax(level != null ? level : this.operandLevel);
+    }
+
+    // Reset current problem when operand level changes. Hands go to 0|0 first.
+    _onOperandLevelChanged() {
+        if (!this.o) return;
+        // Reset visual hands
+        try {
+            Promise.resolve().then(() => this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }));
+        } catch (_) {}
+        const s = this.o.state();
+        if (s.mode === 'Arithmetic') {
+            // Re-generate a problem honoring the new range
+            const prob = this._randomValidPractice();
+            this.o.setProblem(prob.a, prob.b, prob.op);
+        } else if (s.mode === 'Tutorial') {
+            // Re-pick a tutorial number within range
+            const max = getOperandLevelMax(this.operandLevel);
+            const n = Math.max(1, Math.min(max, Math.floor(Math.random() * max) + 1));
+            this.o.setTutorialNumber(n);
+        } else if (s.mode === 'Challenge' && this.challenge && this.challenge.active) {
+            // Force a new challenge question so the new range takes effect
+            this._loadNextChallengeQuestion();
+        }
     }
 
     _toggleAuto() {
@@ -1547,7 +1791,8 @@ class UiBindings {
                     try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
                     this.o.setProblem(prob.a, prob.b, prob.op);
                 } else {
-                    const newNum = Math.floor(Math.random() * 99) + 1;
+                    const tMax = getOperandLevelMax(this.operandLevel);
+                    const newNum = 1 + Math.floor(Math.random() * tMax);
                     try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
                     this.o.setTutorialNumber(newNum);
                 }

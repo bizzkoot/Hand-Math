@@ -4,6 +4,9 @@ const { test, expect } = require('@playwright/test');
 test.describe('Teaching UI - Tutorial', () => {
   test('step progression and narration', async ({ page }) => {
     const local = process.env.HM_LOCAL_FILE === '1';
+    await page.addInitScript(() => {
+      try { localStorage.setItem('hm_operand_level', '5'); } catch (_) {}
+    });
     await page.goto(local ? 'index.html' : '/index.html');
 
     // Wait for app (GLTF + HandController)
@@ -42,5 +45,6 @@ test.describe('Teaching UI - Tutorial', () => {
 
     // Screenshot for artifacts
     await page.screenshot({ path: 'test-results/ui-tutorial-final.png', fullPage: true });
+    await page.evaluate(() => localStorage.removeItem('hm_operand_level'));
   });
 });

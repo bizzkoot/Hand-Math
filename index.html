@@ -106,6 +106,17 @@
                             </svg>
                         </button>
                     </div>
+                    <!-- Operand range level (top-left of 3D scene) -->
+                    <div id="operandLevelBadge" class="hm-oplevel-badge" tabindex="0">
+                        <span class="hm-oplevel-badge-inner">
+                            <span class="hm-oplevel-badge-row">
+                                <span id="operandLevelLabel" class="hm-oplevel-current">Level 1</span>
+                                <svg class="hm-oplevel-caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>
+                            </span>
+                            <span id="operandLevelRange" class="hm-oplevel-range">1–20</span>
+                        </span>
+                    </div>
+                    <ul id="operandLevelMenu" class="hm-oplevel-menu" role="listbox" hidden></ul>
                     <!-- Bottom-left attribution overlay -->
                     <div id="assetCredits" class="hm-credits" role="note" data-i18n-aria="aria.modelAttribution">
                         <span data-i18n="credit.handModel">Hand model:</span> <a href="https://sketchfab.com/3d-models/rigged-hand-eae97cc2a742413cb5338ab942b12c1e" target="_blank" rel="noopener" id="creditTitle">Rigged Hand</a>

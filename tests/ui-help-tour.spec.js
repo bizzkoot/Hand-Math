@@ -2,7 +2,7 @@
 const { test, expect } = require('@playwright/test');
 
 test.describe('Teaching UI - Help Tour', () => {
-  test('Tour shows 7 steps, saves/restores mode, and can be skipped', async ({ page }) => {
+  test('Tour shows 8 steps, saves/restores mode, and can be skipped', async ({ page }) => {
     const local = process.env.HM_LOCAL_FILE === '1';
     await page.goto(local ? 'index.html' : '/index.html');
     await page.waitForFunction(() => window.__HM__ && window.handMathApp);
@@ -20,8 +20,8 @@ test.describe('Teaching UI - Help Tour', () => {
     // Starting the tour switches mode to Tutorial so elements are visible
     expect(await getMode()).toBe('Tutorial');
 
-    // Go through all 7 steps
-    for (let i = 0; i < 6; i++) {
+    // Go through all 8 steps
+    for (let i = 0; i < 7; i++) {
       await page.click('#tourNext');
       await expect(page.locator('#tourOverlay')).toBeVisible();
     }
@@ -79,9 +79,17 @@ test.describe('Teaching UI - Help Tour', () => {
     // Initial step (Step 1)
     await expect(page.locator('#tourTitle')).toHaveText(/3D Hands|Tangan 3D/);
 
-    // Press ArrowRight to go to Step 2
+    // Press ArrowRight to go to Step 2 (Operand Level)
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('#tourTitle')).toHaveText(/Operand Level|Tahap Operan/);
+
+    // Press ArrowRight again to go to Step 3 (Navigation Tabs)
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('#tourTitle')).toHaveText(/Navigation Tabs|Tab Navigasi/);
+
+    // Press ArrowLeft to go back to Step 2 (Operand Level)
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('#tourTitle')).toHaveText(/Operand Level|Tahap Operan/);
 
     // Press ArrowLeft to go back to Step 1
     await page.keyboard.press('ArrowLeft');
@@ -101,8 +109,8 @@ test.describe('Teaching UI - Help Tour', () => {
     await page.click('#tabHelp');
     await page.click('#btnStartTour');
     
-    // Go to step 7 (Settings step)
-    for (let i = 0; i < 6; i++) {
+    // Go to step 8 (Settings step)
+    for (let i = 0; i < 7; i++) {
       await page.keyboard.press('ArrowRight');
     }
 

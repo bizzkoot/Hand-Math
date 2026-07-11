@@ -4,6 +4,9 @@ const { test, expect } = require('@playwright/test');
 test.describe('Teaching UI - Arithmetic (− borrow)', () => {
   test('42 − 17 → 25 with borrow cue', async ({ page }) => {
     const local = process.env.HM_LOCAL_FILE === '1';
+    await page.addInitScript(() => {
+      try { localStorage.setItem('hm_operand_level', '5'); } catch (_) {}
+    });
     await page.goto(local ? 'index.html' : '/index.html');
     await page.waitForFunction(() => window.handMathApp && window.handMathApp.handController && window.TEST_API, { timeout: 30000 });
     await page.waitForSelector('#teachingPanel');
@@ -46,5 +49,6 @@ test.describe('Teaching UI - Arithmetic (− borrow)', () => {
     expect(final.right).toBe(5);
 
     await page.screenshot({ path: 'test-results/ui-arith-sub-borrow-final.png', fullPage: true });
+    await page.evaluate(() => localStorage.removeItem('hm_operand_level'));
   });
 });

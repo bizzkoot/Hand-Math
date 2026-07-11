@@ -264,10 +264,17 @@ This snapshot records the current implemented behavior so we don’t lose parity
 
 ### Practice Controls (Arithmetic)
 - Practice Filter: `+` (Addition only), `−` (Subtraction only), `±` (Mixed). Affects New Problem generation only.
-- Levels influence New Problem difficulty while honoring guards:
+- Carry/borrow filter (internal 3-level axis, exposed via `#levelSel`):
   - Level 1: no carry (Addition) / no borrow (Subtraction).
   - Level 2: mixed (default).
   - Level 3: prefer carry/borrow examples.
+- Operand range filter (user-facing 5-level axis, **Issue #1 rebalanced**): a top-left badge inside the 3D scene (`#operandLevelBadge`) that opens a popover menu with 5 options. The selection limits the range of operands used by Practice, Challenge, and Tutorial generators.
+  - L1: 1–20
+  - L2: 1–40
+  - L3: 1–60
+  - L4: 1–80
+  - L5: 1–99 (full range)
+  - Formula: `Level N = 1 to min(N × 20, 99)`. Default: L1. Persists to `localStorage['hm_operand_level']`. Changing levels resets the current problem and announces the new range via the screen-reader live region.
 
 ## Open Items & Next Steps
 - High: Implement subtraction guard for `A < B` — block progression, show guidance (“Swap numbers or choose +”).

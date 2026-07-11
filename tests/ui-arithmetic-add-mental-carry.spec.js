@@ -4,6 +4,9 @@ const { test, expect } = require('@playwright/test');
 test.describe('Teaching UI - Arithmetic (+ mental carry)', () => {
   test('47 + 38 → 85 uses mental carry (no right reset to 0)', async ({ page }) => {
     const local = process.env.HM_LOCAL_FILE === '1';
+    await page.addInitScript(() => {
+      try { localStorage.setItem('hm_operand_level', '5'); } catch (_) {}
+    });
     await page.goto(local ? 'index.html' : '/index.html');
     await page.waitForFunction(() => window.handMathApp && window.handMathApp.handController && window.TEST_API, { timeout: 30000 });
     await page.waitForSelector('#teachingPanel');
@@ -28,6 +31,7 @@ test.describe('Teaching UI - Arithmetic (+ mental carry)', () => {
     const finalTarget = await page.evaluate(() => TEST_API.getState().steps.at(-1).target);
     expect(finalTarget.left).toBe(8);
     expect(finalTarget.right).toBe(5);
+    await page.evaluate(() => localStorage.removeItem('hm_operand_level'));
   });
 });
 
