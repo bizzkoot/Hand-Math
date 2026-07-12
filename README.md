@@ -20,8 +20,8 @@ Each digit follows a specific finger sequence where **thumb = 5** and other fing
 ### 🧮 Educational Modes
 - **Tutorial** — Step-by-step decomposition of a number into tens and ones
 - **Arithmetic** — Addition and subtraction with animated carry/borrow pedagogy, practice levels (1–3), and filter (add/sub/both). Auto-play mode with SpeechSynthesis (TTS) narration at 0.1×–3.0× speed (adjustable in 0.1× intervals).
-- **Challenge** — Timed quiz (15 s per question) across 3 tiers (Level 1–3) stored in local storage. Features a progression unlock system (Tier 1 requires 15 gems, Tier 2 requires 30 gems) and rating decays (Gold, Silver, Bronze) based on elapsed time, incorrect submissions, and hint usage.
-- **Operand Level Selection** — Choose maximum range for numbers (Level 1–5, spanning 1–20 to 1–99) via a top-centered badge overlay in the 3D scene to adjust difficulty across Tutorial, Arithmetic, and Challenge modes.
+- **Challenge** — Timed quiz (15 s per question) across 3 tiers (Level 1–3) stored in local storage. Features a progression unlock system (Tier 1 requires 15 gems, Tier 2 requires 30 gems) and rating decays (Gold, Silver, Bronze) based on elapsed time, incorrect submissions, and hint usage. Displays a multiple-choice selection grid for Level 6 (Mental Arithmetic) instead of manual hand inputs.
+- **Operand Level Selection** — Choose maximum range for numbers or mental mode (Level 1–6, spanning 1–20 to 1–99, with Level 6 introducing multi-step mental arithmetic equations) via a top-centered badge overlay in the 3D scene to adjust difficulty across Tutorial, Arithmetic, and Challenge modes.
 - **Help** — Static guide + 3-step guided tour overlay
 
 ### 🖐️ Hand & Interaction
@@ -91,6 +91,7 @@ Hand_Math/
 │   ├── arithmeticBuilder.js # Builds step sequences for add/sub with narration
 │   ├── teachingOrchestrator.js # Manages mode switching, step state, nav
 │   ├── uiBindings.js        # All UI event wiring, SoundSynth, challenge, auto-play
+│   ├── mentalArithmeticGenerator.js # Generates multi-step mental arithmetic equations & choices
 │   ├── skinToneService.js   # Material caching and color application
 │   ├── i18n.js              # I18n class with en/ms locale data
 │   ├── testApi.js           # TEST_API for Playwright automation

@@ -453,4 +453,50 @@ class ArithmeticBuilder {
         const text = parts.length ? `${prefix}: ${parts.join(', ')}` : prefix;
         return hand === 'right' ? this._i18n().t('explain.rightPrefix', {text}) : this._i18n().t('explain.leftPrefix', {text});
     }
+
+    buildMultiStep(operands, operators) {
+        const i = this._i18n();
+        const steps = [];
+        
+        const startVal = operands[0];
+        const startL = Math.floor(startVal / 10);
+        const startR = startVal % 10;
+        
+        steps.push({
+            id: 'm-setup',
+            title: i.t('step.setup'),
+            target: { left: startL, right: startR },
+            animate: 'instant',
+            narration: i.t('narration.number', {value: startVal}),
+            explain: i.t('explain.leftTensRightOnes')
+        });
+        
+        let currentVal = startVal;
+        for (let k = 0; k < operators.length; k++) {
+            const op = operators[k];
+            const nextVal = operands[k + 1];
+            
+            let subSteps = [];
+            if (op === '+') {
+                subSteps = this.buildAddition(currentVal, nextVal);
+            } else {
+                subSteps = this.buildSubtraction(currentVal, nextVal);
+            }
+            
+            // Skip the first step (setup) of the sub-steps
+            const activeSteps = subSteps.slice(1);
+            
+            // Add them to our steps with modified ids to prevent collision
+            activeSteps.forEach((step) => {
+                steps.push({
+                    ...step,
+                    id: `m-s${k}-${step.id}`
+                });
+            });
+            
+            currentVal = (op === '+') ? (currentVal + nextVal) : (currentVal - nextVal);
+        }
+        
+        return steps;
+    }
 }
