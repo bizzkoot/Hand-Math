@@ -274,5 +274,9 @@
   "install.modalBodyGeneric": "Untuk muat turun Hand Math:\n\n- Android: Ketik menu (⋮) -> 'Tambah ke skrin Utama'.\n- iPad/iOS: Ketik butang kongsi (⎋) -> 'Tambah ke Skrin Utama'.",
   "help.installPrompt": "Mahu muat turun Hand Math sebagai aplikasi?",
   "help.github": "Repositori GitHub",
-  "help.viewCode": "Lihat Kod"
+  "help.viewCode": "Lihat Kod",
+  "help.changelogPrompt": "Mahu lihat apa yang baharu dalam aplikasi ini?",
+  "help.changelog": "Perubahan Terkini",
+  "changelog.title": "Komit Git Terkini",
+  "changelog.close": "Tutup"
 }

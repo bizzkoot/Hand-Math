@@ -2,7 +2,7 @@
 const { test, expect } = require('@playwright/test');
 
 // Issue #1 (rebalanced): 5-level operand range system (1..5) covering
-// 1-20, 1-40, 1-60, 1-80, 1-99. Lives in a top-left badge in the 3D scene.
+// 1-20, 1-40, 1-60, 1-80, 1-99. Lives in a top-center badge in the 3D scene.
 // Tests below cover rendering, click-to-open menu, level change persistence,
 // arithmetic generator range clamping, challenge generator range clamping,
 // and bilingual labels.

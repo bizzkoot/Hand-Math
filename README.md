@@ -19,23 +19,27 @@ Each digit follows a specific finger sequence where **thumb = 5** and other fing
 
 ### 🧮 Educational Modes
 - **Tutorial** — Step-by-step decomposition of a number into tens and ones
-- **Arithmetic** — Addition and subtraction with animated carry/borrow pedagogy, practice levels (1–3), and filter (add/sub/both). Auto-play mode with TTS narration at 0.1×–3.0× speed.
-- **Challenge** — Timed quiz (15 s per question, 3 levels) with streak tracking, stars, and score
+- **Arithmetic** — Addition and subtraction with animated carry/borrow pedagogy, practice levels (1–3), and filter (add/sub/both). Auto-play mode with SpeechSynthesis (TTS) narration at 0.1×–3.0× speed (adjustable in 0.1× intervals).
+- **Challenge** — Timed quiz (15 s per question) across 3 tiers (Level 1–3) stored in local storage. Features a progression unlock system (Tier 1 requires 15 gems, Tier 2 requires 30 gems) and rating decays (Gold, Silver, Bronze) based on elapsed time, incorrect submissions, and hint usage.
+- **Operand Level Selection** — Choose maximum range for numbers (Level 1–5, spanning 1–20 to 1–99) via a top-centered badge overlay in the 3D scene to adjust difficulty across Tutorial, Arithmetic, and Challenge modes.
 - **Help** — Static guide + 3-step guided tour overlay
 
 ### 🖐️ Hand & Interaction
 - Bone-anchored finger articulation via quaternion slerp (primary) with Euler fallback
 - Finger counting from 0 to 9 on each hand using a defined finger sequence (thumb = 5, fingers = 1)
-- Skin tone picker (6 presets + custom hex input)
-- 3D scene with orbit camera (drag to rotate, scroll to zoom)
+- Skin tone picker (6 presets + custom hex input, shortcuts disabled while hex input is focused)
+- 3D scene with orbit camera (drag to rotate, scroll to zoom) and toolbar overlays to:
+  - **Reset Camera** — Snap back to the calibrated starting view position.
+  - **Toggle Wireframe** — View underlying skeletal rendering on GLTF/GLB hand models.
 
 ### 🎨 UI & Accessibility
 - Full i18n: English and Bahasa Melayu (240+ translation keys each)
 - Dark/light theme toggle (persisted to localStorage)
-- Sound effects (click, chime, buzzer via Web Audio API, muted by default)
+- **Screen Wake Lock** — Prevents screens from sleeping during active lessons. Uses native wake locks with a looping silent video fallback on iOS/Safari.
+- **Web Audio SoundSynth** — Synthetic sound cues (click, chime, buzzer) generated programmatically via the Web Audio API without loading external audio files.
 - Fullscreen mode
-- Keyboard shortcuts: Enter/Space (next), A (auto), R (reset), ? (help), Escape (close modals)
-- No-scroll layout, responsive for 1280×800+
+- Keyboard shortcuts: Enter/Space (next), A (auto), R (reset), ? (help), Escape (close modals). In Guided Tour mode, use ArrowRight (next) and ArrowLeft (back).
+- Responsive layout with **Header Auto-Fitting** (applies data-compact 0–3 to dynamically adjust margins/padding) ensuring no-scroll layout for 1280×800+.
 
 ## 🚀 Quick Start
 

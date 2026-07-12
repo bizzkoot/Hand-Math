@@ -106,7 +106,7 @@
                             </svg>
                         </button>
                     </div>
-                    <!-- Operand range level (top-left of 3D scene) -->
+                    <!-- Operand range level (top-center of 3D scene) -->
                     <div id="operandLevelBadge" class="hm-oplevel-badge" tabindex="0">
                         <span class="hm-oplevel-badge-inner">
                             <span class="hm-oplevel-badge-row">
@@ -270,6 +270,21 @@
                 </div>
             </div>
         </div>
+        <!-- Changelog Modal -->
+        <div id="changelogModal" class="hm-modal" role="dialog" aria-modal="true" aria-labelledby="changelogModalTitle" hidden>
+            <div class="hm-modal-card">
+                <div class="hm-modal-head">
+                    <h3 id="changelogModalTitle" data-i18n="changelog.title">Recent Git Commits</h3>
+                    <button id="changelogClose" class="hm-btn hm-btn-icon" data-i18n-aria="aria.close">✕</button>
+                </div>
+                <div class="hm-modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div id="changelogList" class="hm-changelog-list"></div>
+                </div>
+                <div class="hm-modal-foot">
+                    <button id="changelogCloseBtn" class="hm-btn hm-btn-primary" data-i18n="changelog.close">Close</button>
+                </div>
+            </div>
+        </div>
         <!-- Guided Tour Overlay -->
         <div id="tourOverlay" class="hm-tour" hidden>
             <div class="hm-tour-mask"></div>
@@ -311,6 +326,7 @@
     <script src="js/skinToneService.js"></script>
     <script>window.HANDMATH_STRICT_GLTF = true;</script>
     <script src="js/i18n.js"></script>
+    <script src="js/changelog.js"></script>
     <script src="js/main.js"></script>
     <script src="js/handAdapter.js"></script>
     <script src="js/stepEngine.js"></script>

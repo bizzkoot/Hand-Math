@@ -268,7 +268,7 @@ This snapshot records the current implemented behavior so we don’t lose parity
   - Level 1: no carry (Addition) / no borrow (Subtraction).
   - Level 2: mixed (default).
   - Level 3: prefer carry/borrow examples.
-- Operand range filter (user-facing 5-level axis, **Issue #1 rebalanced**): a top-left badge inside the 3D scene (`#operandLevelBadge`) that opens a popover menu with 5 options. The selection limits the range of operands used by Practice, Challenge, and Tutorial generators.
+- Operand range filter (user-facing 5-level axis, **Issue #1 rebalanced**): a top-center badge inside the 3D scene (`#operandLevelBadge`) that opens a popover menu with 5 options. The selection limits the range of operands used by Practice, Challenge, and Tutorial generators.
   - L1: 1–20
   - L2: 1–40
   - L3: 1–60
