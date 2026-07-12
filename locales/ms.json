@@ -247,6 +247,7 @@
   "challenge.attempts": "{{left}} percubaan lagi",
   "challenge.lastAttempt": "Percubaan terakhir!",
   "challenge.skipped": "Tiada jawapan betul pusingan ini",
+  "challenge.incorrectChoice": "❌ Salah! Anda memilih {{value}}",
   "challenge.showAnswer": "Jawapan: {{value}}",
   "challenge.endTitle": "Cabaran Selesai!",
   "challenge.endGemsCollected": "Permata dikumpul:",

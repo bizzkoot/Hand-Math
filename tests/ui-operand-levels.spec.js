@@ -90,10 +90,10 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
 
     await page.click('#tabArithmetic');
 
-    // Sample 20 random problems; each operand must be <= 20, and sum <= 40
+    // Sample 200 random problems; each operand must be <= 20, and sum <= 20
     const samples = await page.evaluate(() => {
       const out = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 200; i++) {
         const prob = window.__HM__.ui._randomValidPractice();
         out.push(prob);
       }
@@ -105,7 +105,28 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
       expect(p.b).toBeGreaterThanOrEqual(1);
       expect(p.b).toBeLessThanOrEqual(20);
       if (p.op === '+') {
-        expect(p.a + p.b).toBeLessThanOrEqual(40);
+        expect(p.a + p.b).toBeLessThanOrEqual(20);
+      } else {
+        expect(p.a).toBeGreaterThan(p.b);
+      }
+    }
+
+    // Also exercise internal level 1 (no carry/borrow) explicitly, since the
+    // "tens only" branch there had a bug where b could exceed opMax.
+    const internalL1 = await page.evaluate(() => {
+      window.__HM__.ui._practice = { filter: 'both', level: 1 };
+      const out = [];
+      for (let i = 0; i < 300; i++) {
+        const prob = window.__HM__.ui._randomValidPractice();
+        out.push(prob);
+      }
+      return out;
+    });
+    for (const p of internalL1) {
+      expect(p.a).toBeLessThanOrEqual(20);
+      expect(p.b).toBeLessThanOrEqual(20);
+      if (p.op === '+') {
+        expect(p.a + p.b).toBeLessThanOrEqual(20);
       } else {
         expect(p.a).toBeGreaterThan(p.b);
       }
@@ -124,7 +145,7 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
 
     const samples = await page.evaluate(() => {
       const out = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 200; i++) {
         const prob = window.__HM__.ui._randomValidPractice();
         out.push(prob);
       }
@@ -134,6 +155,27 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
       expect(p.a).toBeGreaterThanOrEqual(1);
       expect(p.a).toBeLessThanOrEqual(99);
       expect(p.b).toBeGreaterThanOrEqual(1);
+      expect(p.b).toBeLessThanOrEqual(99);
+      if (p.op === '+') {
+        expect(p.a + p.b).toBeLessThanOrEqual(99);
+      } else {
+        expect(p.a).toBeGreaterThan(p.b);
+      }
+    }
+
+    // Also exercise internal level 1 (no carry/borrow) explicitly to catch
+    // the "tens only" branch where b could exceed opMax.
+    const internalL1 = await page.evaluate(() => {
+      window.__HM__.ui._practice = { filter: 'both', level: 1 };
+      const out = [];
+      for (let i = 0; i < 300; i++) {
+        const prob = window.__HM__.ui._randomValidPractice();
+        out.push(prob);
+      }
+      return out;
+    });
+    for (const p of internalL1) {
+      expect(p.a).toBeLessThanOrEqual(99);
       expect(p.b).toBeLessThanOrEqual(99);
       if (p.op === '+') {
         expect(p.a + p.b).toBeLessThanOrEqual(99);

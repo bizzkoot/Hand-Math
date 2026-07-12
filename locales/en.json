@@ -247,6 +247,7 @@
   "challenge.attempts": "{{left}} tries left",
   "challenge.lastAttempt": "Last try!",
   "challenge.skipped": "No correct answer this round",
+  "challenge.incorrectChoice": "❌ Incorrect! You selected {{value}}",
   "challenge.showAnswer": "Answer: {{value}}",
   "challenge.endTitle": "Challenge Complete!",
   "challenge.endGemsCollected": "Gems collected:",
