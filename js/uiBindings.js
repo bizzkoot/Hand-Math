@@ -733,7 +733,17 @@ class UiBindings {
             promptStr += ' = ?';
             problem = { prompt: promptStr, target: targetVal };
         } else {
-            problem = this._generateChallengeProblem(tier);
+            // Levels 1-5: always generate single-step addition or subtraction
+            // (operand range is enforced by the current operand level). The
+            // old Easy/Medium/Hard "Show X" tiers are bypassed — the tier
+            // still drives timer/gem rewards via _applyTierSettings().
+            const prob = this._randomValidPractice();
+            const targetVal = prob.op === '+' ? (prob.a + prob.b) : (prob.a - prob.b);
+            const displayOp = prob.op === '-' ? '−' : '+';
+            problem = {
+                prompt: window.i18n.t('challenge.promptAnswer', { a: prob.a, op: displayOp, b: prob.b }),
+                target: targetVal,
+            };
         }
         this.challenge.target = problem.target;
         this.challenge.attemptsLeft = 3;
@@ -745,11 +755,14 @@ class UiBindings {
 
         // Update UI
         document.getElementById('challengePrompt').textContent = problem.prompt;
-        
+
         const isMental = this.operandLevel === 6;
+        // For Level 6: hide hand-based controls (multiple-choice only).
+        // For Levels 1-5: keep them visible so the user can also answer by
+        // moving their hands OR by clicking one of the 5 choices.
         document.getElementById('btnChallengeHint').hidden = isMental;
         document.getElementById('btnChallengeSubmit').hidden = isMental;
-        
+
         const feedbackEl = document.getElementById('challengeFeedback');
         if (feedbackEl) {
             feedbackEl.hidden = isMental;
@@ -760,12 +773,12 @@ class UiBindings {
         const attemptsEl = document.getElementById('challengeAttempts');
         if (attemptsEl) attemptsEl.hidden = isMental;
 
+        // 5-choice grid: shown for ALL levels. Level 6: only choice.
+        // Levels 1-5: alongside the hand controls + submit + feedback.
         const mentalChoicesEl = document.getElementById('mentalChoicesChallenge');
         if (mentalChoicesEl) {
-            mentalChoicesEl.style.display = isMental ? 'grid' : 'none';
-            if (isMental) {
-                this._renderMentalChoices(mentalChoicesEl, problem.target);
-            }
+            mentalChoicesEl.style.display = 'grid';
+            this._renderMentalChoices(mentalChoicesEl, problem.target);
         }
 
         const msgEl = document.getElementById('challengeMessage');
@@ -821,6 +834,10 @@ class UiBindings {
 
         if (this.challenge.timer) clearInterval(this.challenge.timer);
         this.challenge.timer = null;
+        // Cancel any pending hand-based auto-submit so it does not race with
+        // this multiple-choice answer (only relevant for Levels 1-5, where
+        // the hand controls are also active).
+        this._cancelAutoSubmitCountdown();
 
         // 1. Immediately animate the 3D hands to show the selected number's fingers movement
         const lHandVal = Math.floor(selectedVal / 10);
@@ -836,95 +853,136 @@ class UiBindings {
 
         const msgEl = document.getElementById('challengeMessage');
         const isCorrect = (selectedVal === target);
-        
+
         // Mark option visually
         if (isCorrect) {
             btn.classList.add('correct-choice');
             this.soundSynth.playChime();
-            
+
             if (msgEl) {
                 msgEl.textContent = window.i18n.t('challenge.correct');
                 msgEl.className = 'challenge-msg success';
             }
 
-            // Award points/gems in challenge mode
-            // Calculate time taken for adaptive steps and scoring
-            const elapsed = Date.now() - this.challenge.questionStartTime;
-            let earnedGems = 1;
-            let earnedTier = 'bronze';
-            if (elapsed < this.challenge.goldUntil) {
-                earnedGems = 3;
-                earnedTier = 'gold';
-            } else if (elapsed < this.challenge.silverUntil) {
-                earnedGems = 2;
-                earnedTier = 'silver';
-            }
-            
-            // Add gem representation
-            this.challenge.gems.push(earnedTier);
-            this.challenge.totalGemsEarned += earnedGems;
-            localStorage.setItem('hm_challenge_total_gems', String(this.challenge.totalGemsEarned));
-            
-            // Update unlock progress (gem count based progress)
-            this.challenge.unlockProgress += earnedGems;
-            localStorage.setItem('hm_challenge_unlock_progress', String(this.challenge.unlockProgress));
-
-            this.challenge.consecutiveCorrect++;
-            
-            // Adaptive step difficulty adjustment
-            if (elapsed < 4000) {
-                this.challenge.mentalStepCount = Math.min(5, (this.challenge.mentalStepCount || 3) + 1);
-            }
-
-            // Wait 1.5 seconds and load next
-            setTimeout(() => {
-                if (this.o.mode === 'Challenge' && this.challenge.active) {
-                    this._loadNextChallengeQuestion();
+            // Level 6 keeps its own step-adaptation flow.
+            // Levels 1-5 reuse _onCorrectAnswer so the gem accounting, tier
+            // unlock check, and "consecutive gold" adaptation all stay in
+            // sync with the hand-based answer path.
+            if (this.operandLevel === 6) {
+                // Award points/gems in challenge mode
+                // Calculate time taken for adaptive steps and scoring
+                const elapsed = Date.now() - this.challenge.questionStartTime;
+                let earnedGems = 1;
+                let earnedTier = 'bronze';
+                if (elapsed < this.challenge.goldUntil) {
+                    earnedGems = 3;
+                    earnedTier = 'gold';
+                } else if (elapsed < this.challenge.silverUntil) {
+                    earnedGems = 2;
+                    earnedTier = 'silver';
                 }
-            }, 1500);
 
-        } else {
-            btn.classList.add('incorrect-choice');
-            this.soundSynth.playBuzzer();
-            
-            if (msgEl) {
-                msgEl.textContent = window.i18n.t('challenge.tryAgain', {value: selectedVal});
-                msgEl.className = 'challenge-msg error';
-            }
-            
-            // Highlight the correct button
-            buttons.forEach(b => {
-                if (parseInt(b.textContent, 10) === target) {
-                    b.classList.add('correct-choice');
+                // Add gem representation
+                this.challenge.gems.push(earnedTier);
+                this.challenge.totalGemsEarned += earnedGems;
+                localStorage.setItem('hm_challenge_total_gems', String(this.challenge.totalGemsEarned));
+
+                // Update unlock progress (gem count based progress)
+                this.challenge.unlockProgress += earnedGems;
+                localStorage.setItem('hm_challenge_unlock_progress', String(this.challenge.unlockProgress));
+
+                this.challenge.consecutiveCorrect++;
+
+                // Adaptive step difficulty adjustment
+                if (elapsed < 4000) {
+                    this.challenge.mentalStepCount = Math.min(5, (this.challenge.mentalStepCount || 3) + 1);
                 }
-            });
 
-            this.challenge.consecutiveCorrect = 0;
-            // Adaptive step difficulty down
-            this.challenge.mentalStepCount = Math.max(3, (this.challenge.mentalStepCount || 3) - 1);
-            
-            // No gem earned for this round
-            this.challenge.gems.push('none');
-
-            // Wait 1.5 seconds, then animate the hands to the CORRECT answer, then proceed to the next question
-            setTimeout(() => {
-                const correctL = Math.floor(target / 10);
-                const correctR = target % 10;
-                try {
-                    this.o.engine?.adapter?.animateDigits({
-                        left: correctL,
-                        right: correctR,
-                        mode: 'step',
-                        durationMs: 400
-                    });
-                } catch (_) {}
-                
+                // Wait 1.5 seconds and load next
                 setTimeout(() => {
                     if (this.o.mode === 'Challenge' && this.challenge.active) {
                         this._loadNextChallengeQuestion();
                     }
                 }, 1500);
-            }, 1500);
+            } else {
+                // Levels 1-5: delegate to the standard correct-answer handler.
+                this._onCorrectAnswer();
+            }
+
+        } else {
+            btn.classList.add('incorrect-choice');
+            this.soundSynth.playBuzzer();
+
+            if (this.operandLevel === 6) {
+                if (msgEl) {
+                    msgEl.textContent = window.i18n.t('challenge.incorrectChoice', {value: selectedVal});
+                    msgEl.className = 'challenge-msg error';
+                }
+
+                // Highlight the correct button
+                buttons.forEach(b => {
+                    if (parseInt(b.textContent, 10) === target) {
+                        b.classList.add('correct-choice');
+                    }
+                });
+
+                this.challenge.consecutiveCorrect = 0;
+                // Adaptive step difficulty down
+                this.challenge.mentalStepCount = Math.max(3, (this.challenge.mentalStepCount || 3) - 1);
+
+                // No gem earned for this round
+                this.challenge.gems.push('none');
+
+                // Wait 1.5 seconds, then animate the hands to the CORRECT answer, then proceed to the next question
+                setTimeout(() => {
+                    const correctL = Math.floor(target / 10);
+                    const correctR = target % 10;
+                    try {
+                        this.o.engine?.adapter?.animateDigits({
+                            left: correctL,
+                            right: correctR,
+                            mode: 'step',
+                            durationMs: 400
+                        });
+                    } catch (_) {}
+
+                    setTimeout(() => {
+                        if (this.o.mode === 'Challenge' && this.challenge.active) {
+                            this._loadNextChallengeQuestion();
+                        }
+                    }, 1500);
+                }, 1500);
+            } else {
+                // Levels 1-5: route through the wrong-answer handler so the
+                // attempt counter and tier drop apply consistently.
+                this._onWrongAnswer();
+
+                if (this.challenge.attemptsLeft > 0) {
+                    // Re-enable other choice buttons that are not marked incorrect
+                    buttons.forEach(b => {
+                        if (!b.classList.contains('incorrect-choice')) {
+                            b.disabled = false;
+                        }
+                    });
+                    // Restart the timer
+                    if (!this.challenge.timer) {
+                        this.challenge.timer = setInterval(() => {
+                            this._tickTimer();
+                        }, 200);
+                    }
+                    if (msgEl) {
+                        msgEl.textContent = window.i18n.t('challenge.tryAgain', {value: selectedVal});
+                        msgEl.className = 'challenge-msg error';
+                    }
+                } else {
+                    // Highlight the correct button
+                    buttons.forEach(b => {
+                        if (parseInt(b.textContent, 10) === target) {
+                            b.classList.add('correct-choice');
+                        }
+                    });
+                }
+            }
         }
         this._updateHeaderUI();
     }
@@ -1315,11 +1373,13 @@ class UiBindings {
         if (tier === 0) {
             // Easy: Single hand 1-9, constrained by operand level.
             const onesMax = Math.min(9, opMax);
-            const val = 1 + Math.floor(Math.random() * onesMax);
-            const useTens = val > 0 && Math.random() < 0.3 && opMax >= 10;
+            const useTens = Math.random() < 0.3 && opMax >= 10;
             if (useTens) {
-                return { prompt: window.i18n.t('challenge.promptShow', {value: val * 10}), target: val * 10 };
+                const tensMax = Math.min(9, Math.floor(opMax / 10));
+                const valTens = 1 + Math.floor(Math.random() * tensMax);
+                return { prompt: window.i18n.t('challenge.promptShow', {value: valTens * 10}), target: valTens * 10 };
             }
+            const val = 1 + Math.floor(Math.random() * onesMax);
             return { prompt: window.i18n.t('challenge.promptShow', {value: val}), target: val };
         } else if (tier === 1) {
             // Medium: Two-hand, no carry/borrow. Constrained by operand level.
@@ -1339,7 +1399,7 @@ class UiBindings {
                     const aMax = Math.max(aMin, opMax - 5);
                     if (aMax < aMin) continue;
                     a = aMin + Math.floor(Math.random() * (aMax - aMin + 1));
-                    const maxB = Math.min(opMax, 99 - a);
+                    const maxB = opMax - a;
                     if (maxB < 5) continue;
                     b = 5 + Math.floor(Math.random() * (maxB - 4));
                     const aR = a % 10, bR = b % 10;
@@ -1347,7 +1407,9 @@ class UiBindings {
                         return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '+', b}), target: a + b };
                     }
                 }
-                return { prompt: window.i18n.t('challenge.promptAnswer', {a: 47, op: '+', b: 38}), target: 85 };
+                const fbA = opMax === 20 ? 11 : (opMax === 40 ? 25 : (opMax === 60 ? 35 : (opMax === 80 ? 45 : 47)));
+                const fbB = opMax === 20 ? 9 : (opMax === 40 ? 15 : (opMax === 60 ? 25 : (opMax === 80 ? 35 : 38)));
+                return { prompt: window.i18n.t('challenge.promptAnswer', {a: fbA, op: '+', b: fbB}), target: fbA + fbB };
             } else {
                 let a, b;
                 for (let i = 0; i < 200; i++) {
@@ -1363,7 +1425,9 @@ class UiBindings {
                         return { prompt: window.i18n.t('challenge.promptAnswer', {a, op: '−', b}), target: a - b };
                     }
                 }
-                return { prompt: window.i18n.t('challenge.promptAnswer', {a: 42, op: '−', b: 17}), target: 25 };
+                const fbA = opMax === 20 ? 20 : (opMax === 40 ? 30 : (opMax === 60 ? 50 : (opMax === 80 ? 70 : 42)));
+                const fbB = opMax === 20 ? 11 : (opMax === 40 ? 15 : (opMax === 60 ? 25 : (opMax === 80 ? 35 : 17)));
+                return { prompt: window.i18n.t('challenge.promptAnswer', {a: fbA, op: '−', b: fbB}), target: fbA - fbB };
             }
         }
     }
@@ -1395,25 +1459,27 @@ class UiBindings {
                         b = 1 + Math.floor(Math.random() * Math.max(1, (10 - a)));
                         if (a + b > 9) continue;
                     } else {
-                        // Tens only: multiples of 10, A, B in opMax, sum <= 90
+                        // Tens only: multiples of 10, A and B within opMax, sum <= opMax
                         const tensMax = Math.min(9, Math.floor(opMax / 10));
                         if (tensMax < 1) continue;
                         a = (1 + Math.floor(Math.random() * tensMax)) * 10;
-                        b = (1 + Math.floor(Math.random() * Math.max(1, (10 - a / 10)))) * 10;
+                        const bMax = tensMax - Math.floor(a / 10);
+                        if (bMax < 1) continue;
+                        b = (1 + Math.floor(Math.random() * bMax)) * 10;
                     }
                 } else if (level === 2) {
-                    // Level 2: Combined, no carry, both operands within opMax
+                    // Level 2: Combined, no carry, both operands within opMax, sum <= opMax
                     a = 1 + Math.floor(Math.random() * opMax);
-                    const maxB = Math.min(opMax, 99 - a);
+                    const maxB = opMax - a;
                     if (maxB < 1) continue;
                     b = 1 + Math.floor(Math.random() * maxB);
                     const aR = a % 10, bR = b % 10;
                     const carry = (aR + bR) >= 10;
                     if (carry) continue;
                 } else {
-                    // Level 3: Mixed carry (forces a carry), both operands within opMax
+                    // Level 3: Mixed carry (forces a carry), both operands within opMax, sum <= opMax
                     a = 10 + Math.floor(Math.random() * Math.max(1, (opMax - 9)));
-                    const maxB = Math.min(opMax, 99 - a);
+                    const maxB = opMax - a;
                     if (maxB < 5) continue;
                     b = 5 + Math.floor(Math.random() * (maxB - 4));
                     const aR = a % 10, bR = b % 10;
@@ -1422,7 +1488,9 @@ class UiBindings {
                 }
                 return { a, b, op: '+' };
             }
-            return level === 3 ? { a: 47, b: 38, op: '+' } : { a: 12, b: 15, op: '+' };
+            const fbA = opMax === 20 ? 11 : (opMax === 40 ? 25 : (opMax === 60 ? 35 : (opMax === 80 ? 45 : 47)));
+            const fbB = opMax === 20 ? 9 : (opMax === 40 ? 15 : (opMax === 60 ? 25 : (opMax === 80 ? 35 : 38)));
+            return level === 3 ? { a: fbA, b: fbB, op: '+' } : { a: Math.floor(opMax / 3) || 1, b: Math.floor(opMax / 3) || 1, op: '+' };
         } else {
             let a, b;
             for (let i = 0; i < 500; i++) {
@@ -1461,7 +1529,9 @@ class UiBindings {
                 }
                 return { a, b, op: '-' };
             }
-            return level === 3 ? { a: 42, b: 17, op: '-' } : { a: 45, b: 12, op: '-' };
+            const fbA = opMax === 20 ? 20 : (opMax === 40 ? 30 : (opMax === 60 ? 50 : (opMax === 80 ? 70 : 42)));
+            const fbB = opMax === 20 ? 11 : (opMax === 40 ? 15 : (opMax === 60 ? 25 : (opMax === 80 ? 35 : 17)));
+            return level === 3 ? { a: fbA, b: fbB, op: '-' } : { a: Math.floor(opMax * 0.8) || 2, b: Math.floor(opMax * 0.3) || 1, op: '-' };
         }
     }
 
@@ -1646,8 +1716,11 @@ class UiBindings {
             const n = Math.max(1, Math.min(max, Math.floor(Math.random() * max) + 1));
             this.o.setTutorialNumber(n);
         } else if (s.mode === 'Challenge' && this.challenge && this.challenge.active) {
-            // Force a new challenge question so the new range takes effect
-            this._loadNextChallengeQuestion();
+            // Force a restart of the challenge session when the level is changed
+            if (this.challenge.timer) clearInterval(this.challenge.timer);
+            this.challenge.timer = null;
+            this._cancelAutoSubmitCountdown();
+            this._startChallenge();
         }
     }
 
