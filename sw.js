@@ -8,7 +8,7 @@
  * - Update notification: when new SW detected, notify all clients to refresh
  */
 
-const CACHE_NAME = 'hand-math-v1.1.1';
+const CACHE_NAME = 'hand-math-v1.1.2';
 const STATIC_CACHE = CACHE_NAME + '-static';
 const MODEL_CACHE = CACHE_NAME + '-models';
 
@@ -17,6 +17,7 @@ const STATIC_ASSETS = [
     'index.html',
     'styles/main.css',
     'styles/teaching.css',
+    'js/changelog.js',
     'js/handAdapter.js',
     'js/handBoneMap.js',
     'js/handController.js',

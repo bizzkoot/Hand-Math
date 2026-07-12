@@ -168,6 +168,9 @@ class UiBindings {
         this.infoModal = document.getElementById('infoModal');
         this.infoClose = document.getElementById('infoClose');
         this.infoGotIt = document.getElementById('infoGotIt');
+        this.changelogModal = document.getElementById('changelogModal');
+        this.changelogClose = document.getElementById('changelogClose');
+        this.changelogCloseBtn = document.getElementById('changelogCloseBtn');
         this.helpContent = document.getElementById('helpContent');
         this.panelInfoBtn = document.getElementById('panelInfoBtn');
         this.panelStepCounter = document.getElementById('panelStepCounter');
@@ -196,7 +199,7 @@ class UiBindings {
             this._practice.level = parseInt(this.levelSel.value) || 2;
         });
 
-        // Operand range level (top-left badge in 3D scene). User-facing;
+        // Operand range level (top-center badge in 3D scene). User-facing;
         // controls the operand range used by Practice and Challenge generators.
         this._initOperandLevelUI();
 
@@ -324,7 +327,25 @@ class UiBindings {
         document.getElementById('btnInfo')?.addEventListener('click', () => { this.soundSynth.playClick(); toggleInfo(true); });
         this.infoClose?.addEventListener('click', () => { this.soundSynth.playClick(); toggleInfo(false); });
         this.infoGotIt?.addEventListener('click', () => { this.soundSynth.playClick(); toggleInfo(false); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleInfo(false); });
+
+        // Changelog modal
+        const toggleChangelog = (open) => {
+            if (!this.changelogModal) return;
+            this.changelogModal.hidden = !open;
+            if (open) {
+                this._renderChangelog();
+            }
+        };
+        this.changelogClose?.addEventListener('click', () => { this.soundSynth.playClick(); toggleChangelog(false); });
+        this.changelogCloseBtn?.addEventListener('click', () => { this.soundSynth.playClick(); toggleChangelog(false); });
+        this.toggleChangelog = toggleChangelog;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                toggleInfo(false);
+                toggleChangelog(false);
+            }
+        });
 
         // Tour wiring
         this._tourIdx = -1;
@@ -1281,7 +1302,7 @@ class UiBindings {
     }
 
     // ---- Operand range level (5 steps, 1..5) ----
-    // The badge lives in the top-left of the 3D scene. Click to open a
+    // The badge lives in the top-center of the 3D scene. Click to open a
     // popover with 5 options. Selection persists to localStorage and resets
     // the current problem.
     _initOperandLevelUI() {
@@ -1620,8 +1641,18 @@ class UiBindings {
                     <a href="https://github.com/bizzkoot/Hand-Math" target="_blank" rel="noopener" class="hm-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">${window.i18n.t('help.viewCode')}</a>
                 </div>`;
 
+                // Add Changelog row
+                html += `<div class="hm-help-block" style="display:flex; align-items:center; justify-content:space-between; margin-top: 10px;">
+                    <span style="font-size:14px; font-weight:500;">${window.i18n.t('help.changelogPrompt')}</span>
+                    <button id="btnHelpChangelog" class="hm-btn hm-btn-primary">${window.i18n.t('help.changelog')}</button>
+                </div>`;
+
                 helpContent.innerHTML = html;
                 helpContent.querySelector('#btnStartTour')?.addEventListener('click', () => { this._startTour(); });
+                helpContent.querySelector('#btnHelpChangelog')?.addEventListener('click', () => {
+                    this.soundSynth.playClick();
+                    this.toggleChangelog?.(true);
+                });
                 helpContent.querySelector('#btnHelpInstall')?.addEventListener('click', () => {
                     this.soundSynth.playClick();
                     if (this._deferredPrompt) {
@@ -2054,6 +2085,82 @@ class UiBindings {
         const isAndroid = /Android/i.test(navigator.userAgent);
         const textKey = isAndroid ? 'install.modalBodyAndroid' : 'install.modalBodyGeneric';
         this.installInstructionText.innerText = window.i18n.t(textKey);
+    }
+
+    _parseMarkdown(text) {
+        if (!text) return '';
+        
+        // Escape HTML to prevent XSS
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // Process lists. Split by lines.
+        const lines = html.split('\n');
+        let inList = false;
+        const processedLines = [];
+
+        for (let line of lines) {
+            const trimmed = line.trim();
+            // Check if it's a bullet point (starts with '-' or '*' followed by space)
+            if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                if (!inList) {
+                    processedLines.push('<ul>');
+                    inList = true;
+                }
+                const content = trimmed.substring(2);
+                processedLines.push(`<li>${content}</li>`);
+            } else {
+                if (inList) {
+                    processedLines.push('</ul>');
+                    inList = false;
+                }
+                if (trimmed) {
+                    processedLines.push(`<p>${trimmed}</p>`);
+                }
+            }
+        }
+        if (inList) {
+            processedLines.push('</ul>');
+        }
+
+        html = processedLines.join('\n');
+
+        // Process **bold**
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // Process `code`
+        html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+
+        return html;
+    }
+
+    _renderChangelog() {
+        const listEl = document.getElementById('changelogList');
+        if (!listEl) return;
+
+        const commits = window.HM_CHANGELOG || [];
+        if (commits.length === 0) {
+            listEl.innerHTML = `<div style="text-align:center; padding: 20px; opacity: 0.6;">${window.i18n.t('changelog.empty') || 'No commits found.'}</div>`;
+            return;
+        }
+
+        listEl.innerHTML = commits.map(commit => {
+            const parsedBody = this._parseMarkdown(commit.body);
+            return `
+                <div class="hm-commit-item">
+                    <div class="hm-commit-header">
+                        <span class="hm-commit-hash">${commit.hash}</span>
+                        <span class="hm-commit-date">${commit.date}</span>
+                    </div>
+                    <div class="hm-commit-subject">${commit.subject}</div>
+                    ${commit.body ? `<div class="hm-commit-body">${parsedBody}</div>` : ''}
+                </div>
+            `;
+        }).join('');
     }
 
 }

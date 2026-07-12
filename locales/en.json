@@ -274,5 +274,9 @@
   "install.modalBodyGeneric": "To install Hand Math:\n\n- Android: Tap the menu (⋮) -> 'Add to Home screen'.\n- iPad/iOS: Tap the share button (⎋) -> 'Add to Home Screen'.",
   "help.installPrompt": "Want to install Hand Math as an app?",
   "help.github": "GitHub Repository",
-  "help.viewCode": "View Code"
+  "help.viewCode": "View Code",
+  "help.changelogPrompt": "Want to see what's new in the app?",
+  "help.changelog": "Recent Changes",
+  "changelog.title": "Recent Git Commits",
+  "changelog.close": "Close"
 }
