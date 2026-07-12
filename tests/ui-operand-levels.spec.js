@@ -28,9 +28,9 @@ test.describe('Teaching UI - Operand Range Levels (Issue #1, 5 levels)', () => {
     await expect(page.locator('#operandLevelBadge')).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#operandLevelMenu')).toBeVisible();
 
-    // 5 options
+    // 6 options
     const options = page.locator('#operandLevelMenu .hm-oplevel-option');
-    await expect(options).toHaveCount(5);
+    await expect(options).toHaveCount(6);
 
     // First option active
     await expect(options.nth(0)).toHaveClass(/is-active/);

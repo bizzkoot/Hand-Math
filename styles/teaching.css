@@ -1570,3 +1570,55 @@
     }
 }
 
+/* Mental Arithmetic choices grid */
+.hm-mental-choices {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin: 15px 0;
+    width: 100%;
+}
+.hm-mental-choice-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hm-text);
+    background: var(--btn-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+.hm-mental-choice-btn:hover {
+    background: var(--btn-hover-bg);
+    transform: translateY(-1px);
+}
+.hm-mental-choice-btn:active {
+    transform: translateY(0);
+}
+.hm-mental-choice-btn.correct-choice {
+    background: var(--hm-accent2) !important;
+    color: #ffffff !important;
+    border-color: var(--hm-accent2) !important;
+}
+.hm-mental-choice-btn.incorrect-choice {
+    background: var(--hm-danger) !important;
+    color: #ffffff !important;
+    border-color: var(--hm-danger) !important;
+}
+
+@media (max-width: 600px) {
+    .hm-mental-choices {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+    }
+    .hm-mental-choice-btn {
+        padding: 8px 4px;
+        font-size: 14px;
+    }
+}
+

@@ -11,6 +11,7 @@
             prevStep(){ return orchestrator.prev(); },
             reset(){ orchestrator.reset(); },
             setProblem({a,b,op}){ orchestrator.setProblem(a,b,op ?? orchestrator.problem.op); },
+            setMultiStepProblem(operands, operators){ orchestrator.setMultiStepProblem(operands, operators); },
             getState(){ return orchestrator.state(); },
             waitForSettled(ms){ return adapter.awaitSettled({ timeoutMs: ms ?? 2000 }); },
             // Operand range level (1..5). Set or read.

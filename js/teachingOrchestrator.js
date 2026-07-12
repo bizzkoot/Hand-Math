@@ -41,6 +41,7 @@ class TeachingOrchestrator {
     setAuto(enabled) { this.engine.setAuto(enabled); this._emit(); }
     setOperation(op) { this.problem.op = op; this._rebuild(); this._emit(); }
     setProblem(a, b, op = this.problem.op) { this.problem = { a, b, op }; this._rebuild(); this._emit(); }
+    setMultiStepProblem(operands, operators) { this.problem = { operands, operators, isMultiStep: true }; this._rebuild(); this._emit(); }
     setTutorialNumber(n) { this.problem = { a: n, b: 0, op: '+' }; this._rebuildTutorial(); this._emit(); }
 
     async next() {
@@ -104,14 +105,19 @@ class TeachingOrchestrator {
     }
 
     _rebuildArithmetic() {
-        const { a, b, op } = this.problem;
-        // Guards at orchestrator level to ensure solvable within 0–99
-        const invalidAdd = (op === '+') && (a + b > 99);
-        const invalidSub = (op === '-') && (a < b);
-        if (invalidAdd || invalidSub) {
-            this.steps = [];
+        const p = this.problem;
+        if (p.isMultiStep) {
+            this.steps = this.builder.buildMultiStep(p.operands, p.operators);
         } else {
-            this.steps = op === '+' ? this.builder.buildAddition(a, b) : this.builder.buildSubtraction(a, b);
+            const { a, b, op } = p;
+            // Guards at orchestrator level to ensure solvable within 0–99
+            const invalidAdd = (op === '+') && (a + b > 99);
+            const invalidSub = (op === '-') && (a < b);
+            if (invalidAdd || invalidSub) {
+                this.steps = [];
+            } else {
+                this.steps = op === '+' ? this.builder.buildAddition(a, b) : this.builder.buildSubtraction(a, b);
+            }
         }
         this.index = 0;
     }

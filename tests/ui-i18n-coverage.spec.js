@@ -45,17 +45,10 @@ test.describe('Teaching UI - i18n coverage', () => {
     await page.selectOption('#langSwitcher', 'ms');
     await page.waitForFunction(() => window.i18n.currentLang === 'ms');
 
-    const themeTitle = await page.locator('#btnTheme').getAttribute('title');
-    expect(themeTitle).toBe('Togol Tema');
-
-    const swatch3Aria = await page.locator('.hm-swatch[data-hex="#c79a6b"]').getAttribute('aria-label');
-    expect(swatch3Aria).toBe('Warna kulit 3');
-
-    const leftIncAria = await page.locator('.hand-control-plus[data-hand="left"]').getAttribute('aria-label');
-    expect(leftIncAria).toBe('Tambah tangan kiri');
-
-    const langTitle = await page.locator('#langSwitcher').getAttribute('title');
-    expect(langTitle).toBe('Bahasa / Language');
+    await expect(page.locator('#btnTheme')).toHaveAttribute('title', 'Togol Tema');
+    await expect(page.locator('.hm-swatch[data-hex="#c79a6b"]')).toHaveAttribute('aria-label', 'Warna kulit 3');
+    await expect(page.locator('.hand-control-plus[data-hand="left"]')).toHaveAttribute('aria-label', 'Tambah tangan kiri');
+    await expect(page.locator('#langSwitcher')).toHaveAttribute('title', 'Bahasa / Language');
   });
 
   test('mute/unmute button uses translated aria-label and updates on toggle + lang switch', async ({ page }) => {

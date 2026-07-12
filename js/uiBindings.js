@@ -89,7 +89,7 @@ const SPEED_STEP = 0.1;
 //   Level 3: 1 - 60
 //   Level 4: 1 - 80
 //   Level 5: 1 - 99
-const OPERAND_LEVEL_COUNT = 5;
+const OPERAND_LEVEL_COUNT = 6;
 const OPERAND_LEVEL_KEY = 'hm_operand_level';
 const OPERAND_LEVEL_DEFAULT = 1;
 
@@ -136,8 +136,7 @@ class UiBindings {
         this.tabTutorial.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Tutorial'); });
         this.tabArithmetic.addEventListener('click', () => {
             this.soundSynth.playClick();
-            const prob = this._randomValidPractice();
-            this.o.setProblem(prob.a, prob.b, prob.op);
+            this._loadPracticeProblem();
             this.o.setMode('Arithmetic');
         });
         this.tabChallenge?.addEventListener('click', () => { this.soundSynth.playClick(); this.o.setMode('Challenge'); });
@@ -228,9 +227,7 @@ class UiBindings {
         });
         this.btnNew.addEventListener('click', async () => {
             this.soundSynth.playClick();
-            const prob = this._randomValidPractice();
-            try { await this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
-            this.o.setProblem(prob.a, prob.b, prob.op);
+            this._loadPracticeProblem();
         });
         this.btnReset.addEventListener('click', () => { this.soundSynth.playClick(); this.o.reset(); });
         this.btnAuto.addEventListener('click', () => { this.soundSynth.playClick(); this._toggleAuto(); });
@@ -519,6 +516,7 @@ class UiBindings {
             recentCorrect: 0,
             recentWrong: 0,
             consecutiveCorrect: 0,
+            mentalStepCount: 3,
             // Persisted state
             difficultyTier: savedTier,
             totalGemsEarned: savedGems,
@@ -537,6 +535,7 @@ class UiBindings {
 
         // Hook into hand state updates for live feedback and auto-submit countdown
         window.onHandMathStateChange = (state) => {
+            if (this.operandLevel === 6) return;
             if (this.challenge && this.challenge.active && this.challenge.target !== null) {
                 const feedbackEl = document.getElementById('challengeFeedback');
                 if (feedbackEl && !feedbackEl.classList.contains('challenge-feedback-done')) {
@@ -720,7 +719,22 @@ class UiBindings {
         Promise.resolve().then(() => this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }));
 
         const tier = this.challenge.difficultyTier;
-        const problem = this._generateChallengeProblem(tier);
+        let problem;
+        if (this.operandLevel === 6) {
+            const stepCount = this.challenge.mentalStepCount || 3;
+            const mentalProblem = MentalArithmeticGenerator.generate(stepCount);
+            let promptStr = String(mentalProblem.operands[0]);
+            let targetVal = mentalProblem.operands[0];
+            for (let i = 0; i < mentalProblem.operators.length; i++) {
+                const displayOp = mentalProblem.operators[i] === '-' ? '−' : '+';
+                promptStr += ` ${displayOp} ${mentalProblem.operands[i+1]}`;
+                targetVal = mentalProblem.operators[i] === '+' ? (targetVal + mentalProblem.operands[i+1]) : (targetVal - mentalProblem.operands[i+1]);
+            }
+            promptStr += ' = ?';
+            problem = { prompt: promptStr, target: targetVal };
+        } else {
+            problem = this._generateChallengeProblem(tier);
+        }
         this.challenge.target = problem.target;
         this.challenge.attemptsLeft = 3;
         this.challenge.hintUsed = false;
@@ -731,10 +745,27 @@ class UiBindings {
 
         // Update UI
         document.getElementById('challengePrompt').textContent = problem.prompt;
+        
+        const isMental = this.operandLevel === 6;
+        document.getElementById('btnChallengeHint').hidden = isMental;
+        document.getElementById('btnChallengeSubmit').hidden = isMental;
+        
         const feedbackEl = document.getElementById('challengeFeedback');
         if (feedbackEl) {
+            feedbackEl.hidden = isMental;
             feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: 0});
             feedbackEl.classList.remove('challenge-feedback-done');
+        }
+
+        const attemptsEl = document.getElementById('challengeAttempts');
+        if (attemptsEl) attemptsEl.hidden = isMental;
+
+        const mentalChoicesEl = document.getElementById('mentalChoicesChallenge');
+        if (mentalChoicesEl) {
+            mentalChoicesEl.style.display = isMental ? 'grid' : 'none';
+            if (isMental) {
+                this._renderMentalChoices(mentalChoicesEl, problem.target);
+            }
         }
 
         const msgEl = document.getElementById('challengeMessage');
@@ -754,10 +785,12 @@ class UiBindings {
             fill.className = 'challenge-timer-fill challenge-fill-gold';
         }
 
-        document.getElementById('btnChallengeHint').hidden = false;
-        document.getElementById('btnChallengeHint').disabled = false;
-        document.getElementById('btnChallengeSubmit').hidden = false;
-        document.getElementById('btnChallengeSubmit').disabled = false;
+        if (!isMental) {
+            document.getElementById('btnChallengeHint').hidden = false;
+            document.getElementById('btnChallengeHint').disabled = false;
+            document.getElementById('btnChallengeSubmit').hidden = false;
+            document.getElementById('btnChallengeSubmit').disabled = false;
+        }
 
         // Start timer (updates every 200ms for smooth bar)
         if (this.challenge.timer) clearInterval(this.challenge.timer);
@@ -766,6 +799,145 @@ class UiBindings {
         }, 200);
 
         this._announce(window.i18n.t('challenge.newQuestion', {prompt: problem.prompt}));
+    }
+
+    _renderMentalChoices(container, target) {
+        container.innerHTML = '';
+        const choices = MentalArithmeticGenerator.generateChoices(target);
+        
+        choices.forEach(val => {
+            const btn = document.createElement('button');
+            btn.className = 'hm-mental-choice-btn';
+            btn.textContent = String(val);
+            btn.addEventListener('click', () => this._onSelectMentalChoice(btn, val, target));
+            container.appendChild(btn);
+        });
+    }
+
+    async _onSelectMentalChoice(btn, selectedVal, target) {
+        // Prevent double clicking while processing
+        const buttons = btn.parentElement.querySelectorAll('.hm-mental-choice-btn');
+        buttons.forEach(b => b.disabled = true);
+
+        if (this.challenge.timer) clearInterval(this.challenge.timer);
+        this.challenge.timer = null;
+
+        // 1. Immediately animate the 3D hands to show the selected number's fingers movement
+        const lHandVal = Math.floor(selectedVal / 10);
+        const rHandVal = selectedVal % 10;
+        try {
+            this.o.engine?.adapter?.animateDigits({
+                left: lHandVal,
+                right: rHandVal,
+                mode: 'step',
+                durationMs: 300
+            });
+        } catch (_) {}
+
+        const msgEl = document.getElementById('challengeMessage');
+        const isCorrect = (selectedVal === target);
+        
+        // Mark option visually
+        if (isCorrect) {
+            btn.classList.add('correct-choice');
+            this.soundSynth.playChime();
+            
+            if (msgEl) {
+                msgEl.textContent = window.i18n.t('challenge.correct');
+                msgEl.className = 'challenge-msg success';
+            }
+
+            // Award points/gems in challenge mode
+            // Calculate time taken for adaptive steps and scoring
+            const elapsed = Date.now() - this.challenge.questionStartTime;
+            let earnedGems = 1;
+            let earnedTier = 'bronze';
+            if (elapsed < this.challenge.goldUntil) {
+                earnedGems = 3;
+                earnedTier = 'gold';
+            } else if (elapsed < this.challenge.silverUntil) {
+                earnedGems = 2;
+                earnedTier = 'silver';
+            }
+            
+            // Add gem representation
+            this.challenge.gems.push(earnedTier);
+            this.challenge.totalGemsEarned += earnedGems;
+            localStorage.setItem('hm_challenge_total_gems', String(this.challenge.totalGemsEarned));
+            
+            // Update unlock progress (gem count based progress)
+            this.challenge.unlockProgress += earnedGems;
+            localStorage.setItem('hm_challenge_unlock_progress', String(this.challenge.unlockProgress));
+
+            this.challenge.consecutiveCorrect++;
+            
+            // Adaptive step difficulty adjustment
+            if (elapsed < 4000) {
+                this.challenge.mentalStepCount = Math.min(5, (this.challenge.mentalStepCount || 3) + 1);
+            }
+
+            // Wait 1.5 seconds and load next
+            setTimeout(() => {
+                if (this.o.mode === 'Challenge' && this.challenge.active) {
+                    this._loadNextChallengeQuestion();
+                }
+            }, 1500);
+
+        } else {
+            btn.classList.add('incorrect-choice');
+            this.soundSynth.playBuzzer();
+            
+            if (msgEl) {
+                msgEl.textContent = window.i18n.t('challenge.tryAgain', {value: selectedVal});
+                msgEl.className = 'challenge-msg error';
+            }
+            
+            // Highlight the correct button
+            buttons.forEach(b => {
+                if (parseInt(b.textContent, 10) === target) {
+                    b.classList.add('correct-choice');
+                }
+            });
+
+            this.challenge.consecutiveCorrect = 0;
+            // Adaptive step difficulty down
+            this.challenge.mentalStepCount = Math.max(3, (this.challenge.mentalStepCount || 3) - 1);
+            
+            // No gem earned for this round
+            this.challenge.gems.push('none');
+
+            // Wait 1.5 seconds, then animate the hands to the CORRECT answer, then proceed to the next question
+            setTimeout(() => {
+                const correctL = Math.floor(target / 10);
+                const correctR = target % 10;
+                try {
+                    this.o.engine?.adapter?.animateDigits({
+                        left: correctL,
+                        right: correctR,
+                        mode: 'step',
+                        durationMs: 400
+                    });
+                } catch (_) {}
+                
+                setTimeout(() => {
+                    if (this.o.mode === 'Challenge' && this.challenge.active) {
+                        this._loadNextChallengeQuestion();
+                    }
+                }, 1500);
+            }, 1500);
+        }
+        this._updateHeaderUI();
+    }
+
+    _loadPracticeProblem() {
+        try { this.o.engine?.adapter?.animateDigits({ left: 0, right: 0, mode: 'instant', durationMs: 0 }); } catch (_) {}
+        if (this.operandLevel === 6) {
+            const prob = MentalArithmeticGenerator.generate(3);
+            this.o.setMultiStepProblem(prob.operands, prob.operators);
+        } else {
+            const prob = this._randomValidPractice();
+            this.o.setProblem(prob.a, prob.b, prob.op);
+        }
     }
 
     _tickTimer() {
@@ -1467,8 +1639,7 @@ class UiBindings {
         const s = this.o.state();
         if (s.mode === 'Arithmetic') {
             // Re-generate a problem honoring the new range
-            const prob = this._randomValidPractice();
-            this.o.setProblem(prob.a, prob.b, prob.op);
+            this._loadPracticeProblem();
         } else if (s.mode === 'Tutorial') {
             // Re-pick a tutorial number within range
             const max = getOperandLevelMax(this.operandLevel);
@@ -1593,23 +1764,50 @@ class UiBindings {
         } else if (s.mode === 'Arithmetic') {
             panelHeading.textContent = window.i18n.t('tab.arithmetic');
             panelQuestion.textContent = window.i18n.t('panel.arithmeticTitle');
-            document.getElementById('operandA').textContent = String(s.problem.a);
-            document.getElementById('operator').textContent = s.problem.op;
-            document.getElementById('operandB').textContent = String(s.problem.b);
-            document.getElementById('answerSlot').textContent = '…';
-            this.btnAdd.classList.toggle('is-active', s.problem.op === '+');
-            this.btnSub.classList.toggle('is-active', s.problem.op === '-');
-
-            // Guards and messaging
-            const sum = s.problem.a + s.problem.b;
-            const subInvalid = s.problem.op === '-' && s.problem.a < s.problem.b;
-            const addOverflow = s.problem.op === '+' && sum > 99;
-            if (subInvalid) {
-                panelExplanation.textContent = window.i18n.t('panel.subInvalid');
-            } else if (addOverflow) {
-                panelExplanation.textContent = window.i18n.t('panel.addOverflow');
+            
+            const promptEl = document.getElementById('arithPrompt');
+            if (s.problem.isMultiStep) {
+                if (promptEl) {
+                    let expr = '';
+                    const operands = s.problem.operands;
+                    const operators = s.problem.operators;
+                    expr += `<span class="hm-op">${operands[0]}</span>`;
+                    for (let i = 0; i < operators.length; i++) {
+                        const displayOp = operators[i] === '-' ? '−' : '+';
+                        expr += ` <span class="hm-op">${displayOp}</span> <span class="hm-op">${operands[i+1]}</span>`;
+                    }
+                    expr += ` <span class="hm-op">=</span> <span id="answerSlot" class="hm-op hm-answer">…</span>`;
+                    promptEl.innerHTML = expr;
+                }
+                panelExplanation.textContent = window.i18n.t('challenge.mentalSolve');
             } else {
-                panelExplanation.textContent = window.i18n.t('panel.explanation');
+                if (promptEl && !document.getElementById('operandA')) {
+                    promptEl.innerHTML = `
+                        <span id="operandA" class="hm-op"></span>
+                        <span id="operator" class="hm-op"></span>
+                        <span id="operandB" class="hm-op"></span>
+                        <span id="equals" class="hm-op">=</span>
+                        <span id="answerSlot" class="hm-op hm-answer">?</span>
+                    `;
+                }
+                document.getElementById('operandA').textContent = String(s.problem.a);
+                document.getElementById('operator').textContent = s.problem.op;
+                document.getElementById('operandB').textContent = String(s.problem.b);
+                document.getElementById('answerSlot').textContent = '…';
+                this.btnAdd.classList.toggle('is-active', s.problem.op === '+');
+                this.btnSub.classList.toggle('is-active', s.problem.op === '-');
+
+                // Guards and messaging
+                const sum = s.problem.a + s.problem.b;
+                const subInvalid = s.problem.op === '-' && s.problem.a < s.problem.b;
+                const addOverflow = s.problem.op === '+' && sum > 99;
+                if (subInvalid) {
+                    panelExplanation.textContent = window.i18n.t('panel.subInvalid');
+                } else if (addOverflow) {
+                    panelExplanation.textContent = window.i18n.t('panel.addOverflow');
+                } else {
+                    panelExplanation.textContent = window.i18n.t('panel.explanation');
+                }
             }
         } else if (s.mode === 'Challenge') {
             panelHeading.textContent = window.i18n.t('tab.challenge');
@@ -1753,7 +1951,8 @@ class UiBindings {
             this.btnNext.textContent = s.index >= s.steps.length ? window.i18n.t('btn.restart') : window.i18n.t('btn.next');
             this.btnNext.disabled = guardBlocked;
             if (s.index >= s.steps.length && s.mode === 'Arithmetic') {
-                document.getElementById('answerSlot').textContent = String(s.steps.at(-1)?.target.left ?? '') + String(s.steps.at(-1)?.target.right ?? '');
+                const finalVal = (s.steps.at(-1)?.target.left ?? 0) * 10 + (s.steps.at(-1)?.target.right ?? 0);
+                document.getElementById('answerSlot').textContent = String(finalVal);
             }
         }
     }
