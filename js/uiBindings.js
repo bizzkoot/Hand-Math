@@ -1820,7 +1820,10 @@ class UiBindings {
             
             // Contextual help content for Tutorial vs Arithmetic
             if (helpContent) {
-                let html = `<div class="hm-help-block" style="display:flex; justify-content:flex-end;"><button id="btnStartTour" class="hm-btn hm-btn-primary">${window.i18n.t('help.startTour')}</button></div>`;
+                let html = `<div class="hm-help-block" style="display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:14px; font-weight:500;">${window.i18n.t('help.startTourPrompt')}</span>
+                    <button id="btnStartTour" class="hm-btn hm-btn-primary">${window.i18n.t('help.startTour')}</button>
+                </div>`;
                 
                 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
                 if (!isStandalone) {

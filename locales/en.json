@@ -120,6 +120,7 @@
   "tour.done": "Done",
   "tour.back": "Back",
   "tour.skip": "Skip",
+  "help.startTourPrompt": "Want a guided tour of the app?",
   "help.startTour": "Start Tour",
   "panel.question": "▷ {{a}} = ?",
   "panel.stepCounter": "Step {{current}} / {{total}}",

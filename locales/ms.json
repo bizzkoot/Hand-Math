@@ -120,6 +120,7 @@
   "tour.done": "Selesai",
   "tour.back": "Kembali",
   "tour.skip": "Langkau",
+  "help.startTourPrompt": "Mahu lawatan berpandu untuk aplikasi ini?",
   "help.startTour": "Mulakan Tour",
   "panel.question": "▷ {{a}} = ?",
   "panel.stepCounter": "Langkah {{current}} / {{total}}",
