@@ -40,6 +40,8 @@ android/app/src/main/assets/public/
 android/capacitor-cordova-android-plugins/
 android/keystore.properties
 *.keystore
+*.apk
+*.aab
 
 # Local PIDs
 .server.pid
