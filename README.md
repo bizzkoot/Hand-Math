@@ -8,7 +8,7 @@ An interactive 3D hand visualization app that teaches counting and arithmetic (0
 
 <p>
   <a href="https://github.com/bizzkoot/Hand-Math/releases/latest"><img src="https://img.shields.io/github/v/release/bizzkoot/Hand-Math?color=2ea44f&label=Release" alt="Latest Release"></a>
-  <a href="https://github.com/bizzkoot/Hand-Math/releases/download/v1.0.2/HandMath-v1.0.2.apk"><img src="https://img.shields.io/badge/Download-Android%20APK-2ea44f?logo=android&logoColor=white" alt="Download APK"></a>
+  <a href="https://github.com/bizzkoot/Hand-Math/releases/latest"><img src="https://img.shields.io/badge/Download-Android%20APK-2ea44f?logo=android&logoColor=white" alt="Download APK"></a>
   <a href="https://github.com/bizzkoot/Hand-Math/releases"><img src="https://img.shields.io/github/downloads/bizzkoot/Hand-Math/total?color=blue&label=Downloads" alt="Downloads"></a>
 </p>
 
@@ -80,7 +80,7 @@ This application is PWA-enabled, allowing you to install it directly onto your d
 
 For devices that cannot install PWAs (e.g. kids tablets with locked-down browsers), the app ships as a native Android APK wrapped with [Capacitor](https://capacitorjs.com). The web app and PWA remain unchanged — the APK serves the same static files from local assets.
 
-> **[📦 Download HandMath-v1.0.2.apk](https://github.com/bizzkoot/Hand-Math/releases/download/v1.0.2/HandMath-v1.0.2.apk)** *(~12 MB, Android 5.1+)*
+> **[📦 Download Latest APK](https://github.com/bizzkoot/Hand-Math/releases/latest)** *(~12 MB, Android 5.1+)*
 
 ### Prerequisites
 

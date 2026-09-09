@@ -2076,19 +2076,36 @@ class UiBindings {
         if (native && typeof native.speak === 'function') {
             return new Promise(resolve => {
                 let done = false;
-                const finish = () => { if (!done) { done = true; resolve(); } };
+                const finish = () => {
+                    if (!done) {
+                        done = true;
+                        window.__ttsDone = null;
+                        resolve();
+                    }
+                };
                 window.__ttsDone = finish;
+                const rate = this._speed || 1.0;
+                const lang = isMs ? 'ms' : 'en';
                 const deadline = Date.now() + 4000;
+                const doSpeak = () => {
+                    try {
+                        native.speak(ttsText, lang, rate);
+                    } catch (_) {
+                        native.speak(ttsText, lang);
+                    }
+                    // Safety net if the native onDone callback is missed.
+                    setTimeout(finish, Math.max(10000, 45000 / rate));
+                };
                 const trySpeak = () => {
                     if (done) return;
-                    if (native.isReady()) {
-                        native.speak(ttsText, isMs ? 'ms' : 'en');
-                        // Safety net if the native onDone callback is missed.
-                        setTimeout(finish, Math.max(10000, 45000 / this._speed));
+                    if (typeof native.isReady !== 'function' || native.isReady()) {
+                        doSpeak();
                     } else if (Date.now() < deadline) {
                         setTimeout(trySpeak, 150);
                     } else {
-                        finish();
+                        // Even if isReady timed out, invoke speak() so the native queue
+                        // catches it once initialized rather than dropping audio entirely.
+                        doSpeak();
                     }
                 };
                 trySpeak();
