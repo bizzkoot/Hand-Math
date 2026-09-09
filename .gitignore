@@ -32,6 +32,15 @@ coverage/
 .tmp/
 temp/
 
+# Capacitor / Android
+www/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/capacitor-cordova-android-plugins/
+android/keystore.properties
+*.keystore
+
 # Local PIDs
 .server.pid
 *.pid
@@ -49,7 +58,7 @@ temp/
 .kiro/
 .code/
 
-# Archives and dumps
+# Archives and dumps (keep assets/*.zip untracked)
 *.zip
 *.tar
 *.tgz

@@ -15,7 +15,11 @@
     "test:headed": "playwright test --headed",
     "test:serial": "playwright test --workers=1",
     "test:parallel": "playwright test --workers=4",
-    "test:debug": "playwright test --workers=1 --headed"
+    "test:debug": "playwright test --workers=1 --headed",
+    "cap:prepare": "npm run generate-changelog && node scripts/prepare-www.js",
+    "cap:sync": "npm run cap:prepare && cap sync android",
+    "android:apk": "npm run cap:sync && cd android && JAVA_HOME=\"$(ls -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home 2>/dev/null || /usr/libexec/java_home -v 21 2>/dev/null || echo \"$JAVA_HOME\")\" ./gradlew assembleDebug",
+    "android:apk-release": "npm run cap:sync && cd android && JAVA_HOME=\"$(ls -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home 2>/dev/null || /usr/libexec/java_home -v 21 2>/dev/null || echo \"$JAVA_HOME\")\" ./gradlew assembleRelease"
   },
   "keywords": [
     "3d",
@@ -29,6 +33,8 @@
   "author": "Muhammad Faiz",
   "license": "MIT",
   "devDependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
     "@playwright/test": "^1.55.0",
     "http-server": "^14.1.1"
   },
@@ -44,5 +50,8 @@
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ]
+  ],
+  "dependencies": {
+    "@capacitor/core": "^8.5.1"
+  }
 }
