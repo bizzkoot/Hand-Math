@@ -69,6 +69,95 @@ This application is PWA-enabled, allowing you to install it directly onto your d
 * **Android (Chrome)**: Tap the three-dot menu and select **Install App**.
 * **Offline Access & Cache**: Assets, scripts, stylesheets, and 3D GLTF models are cached locally. The app checks for newer updates automatically every 30 minutes and prompts a reload banner when updates are ready.
 
+## 🤖 Android APK (Capacitor)
+
+For devices that cannot install PWAs (e.g. kids tablets with locked-down browsers), the app ships as a native Android APK wrapped with [Capacitor](https://capacitorjs.com). The web app and PWA remain unchanged — the APK serves the same static files from local assets.
+
+### Prerequisites
+
+* **JDK 21** — Capacitor 8's Android toolchain requires it (the system default Java 17 is not enough):
+  `brew install openjdk@21`
+* **Android SDK** — install Android Studio (or just the cmdline-tools), then:
+  `sdkmanager "platforms;android-36" "build-tools;36.0.0"`
+* `ANDROID_HOME` pointing at the SDK (e.g. `~/Library/Android/sdk`)
+
+### Build & install
+
+```bash
+npm run android:apk              # stage www/, sync, build debug APK
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+The debug APK lands at `android/app/build/outputs/apk/debug/app-debug.apk` (~13 MB).
+
+Other commands:
+
+```bash
+npm run cap:prepare              # stage the web app into www/ only
+npm run cap:sync                 # stage + copy www/ into the Android project
+npm run android:apk-release      # unsigned release APK (see signing below)
+node scripts/generate-android-icons.js   # regenerate launcher icons + splashes from assets/icons/icon.svg
+```
+
+### App identity & versioning
+
+* Package id: `com.handmath.app`, app name: `Hand Math` (set in `capacitor.config.json`; change both there and re-run `npx cap sync android` if ever renamed).
+* **Version bumps**: update `version` in `package.json` **and** `versionCode` / `versionName` in `android/app/build.gradle`, then rebuild. `versionCode` must increase monotonically for updates to install over an existing install.
+
+### Release signing
+
+The debug APK is signed with the auto-generated debug key and is fine for sideloading/testing. For a shareable release build:
+
+```bash
+# 1. Generate a keystore (keep it private; back it up — losing it blocks updates)
+keytool -genkey -v -keystore hand-math-release.keystore -alias handmath \
+    -keyalg RSA -keysize 2048 -validity 10000
+
+# 2. Put credentials in android/keystore.properties (git-ignored, see .gitignore)
+#    storeFile=../hand-math-release.keystore
+#    storePassword=...
+#    keyAlias=handmath
+#    keyPassword=...
+```
+
+Then wire it in `android/app/build.gradle` (standard Capacitor pattern):
+
+```gradle
+// before the android { } block
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+// inside android { }
+signingConfigs {
+    release {
+        if (keystorePropertiesFile.exists()) {
+            storeFile file(keystoreProperties.storeFile)
+            storePassword keystoreProperties.storePassword
+            keyAlias keystoreProperties.keyAlias
+            keyPassword keystoreProperties.keyPassword
+        }
+    }
+}
+buildTypes {
+    release {
+        signingConfig signingConfigs.release
+        // ...
+    }
+}
+```
+
+Add `android/keystore.properties` and `*.keystore` to `.gitignore` — never commit credentials. `npm run android:apk-release` then produces a signed APK at `android/app/build/outputs/apk/release/`; use `./gradlew bundleRelease` for a Play Store `.aab`.
+
+### Native-specific behaviour
+
+Inside the APK the app runs in Capacitor's WebView:
+
+* Service-worker registration is skipped (assets are local; nothing to cache) — `js/main.js`.
+* The PWA "Install Hand Math" widget is suppressed (the app is already installed) — `js/uiBindings.js`.
+* Everything else (i18n, tutorial, arithmetic, challenge, offline models) behaves identically to the web app.
 
 <details>
 <summary><h2 style="display:inline">📁 Project Structure</h2></summary>
@@ -78,6 +167,11 @@ Hand_Math/
 ├── index.html               # Main app entry point (334 lines)
 ├── teaching.html            # Standalone teaching UI (no skin/i18n)
 ├── package.json
+├── capacitor.config.json    # Capacitor wrapper config (appId, webDir)
+├── scripts/
+│   ├── generateChangelog.js # Generates js/changelog.js from git history
+│   ├── prepare-www.js       # Stages the web app into www/ for Capacitor
+│   └── generate-android-icons.js # Renders launcher icons + splashes from icon.svg
 ├── styles/
 │   ├── main.css             # Core layout, theme, controls, responsive
 │   └── teaching.css         # Teaching panels, tabs, tour overlay, halos, cues
@@ -108,6 +202,8 @@ Hand_Math/
 │   ├── rigged_hand.glb      # Original Sketchfab download
 │   └── *.zip                # Original source archives
 ├── vendor/threejs/          # Three.js, OrbitControls, GLTFLoader (MIT)
+├── android/                 # Capacitor Android project (committed; builds via Gradle)
+├── www/                     # Staged web assets for the APK (git-ignored, generated)
 ├── specs/                   # EARS-format requirements, design docs, ADRs
 ├── tests/                   # 17 Playwright spec files
 └── test-results/            # Screenshots and diagnostics
