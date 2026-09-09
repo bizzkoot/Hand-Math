@@ -237,7 +237,7 @@ class UiBindings {
             this.soundSynth.playClick();
             this._ttsEnabled = !this._ttsEnabled;
             this.btnNarrate.setAttribute('aria-pressed', String(this._ttsEnabled));
-            if (!this._ttsEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (!this._ttsEnabled) this._stopSpeech();
         });
         this.btnFullscreen?.addEventListener('click', () => { this.soundSynth.playClick(); this._toggleFullscreen(); });
         
@@ -1747,7 +1747,7 @@ class UiBindings {
             this._startAutoLoop();
         } else {
             this._stopAutoLoop();
-            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            this._stopSpeech();
         }
     }
 
@@ -2049,11 +2049,15 @@ class UiBindings {
         }
     }
 
+    _stopSpeech() {
+        if (window.AndroidTTS) { try { window.AndroidTTS.stop(); } catch (_) {} }
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if (window.__ttsDone) { const d = window.__ttsDone; window.__ttsDone = null; d(); }
+    }
+
     _speak(text) {
         if (!this._ttsEnabled) return Promise.resolve();
-        if (!('speechSynthesis' in window)) return Promise.resolve();
         if (!text || !text.trim()) return Promise.resolve();
-        window.speechSynthesis.cancel();
         let ttsText = text.trim();
         const isMs = window.i18n && window.i18n.currentLang === 'ms';
         if (isMs) {
@@ -2067,6 +2071,31 @@ class UiBindings {
             ttsText = ttsText.replace(/\s\+\s/g, ' plus ');
             ttsText = ttsText.replace(/\s\=\s/g, ' equals ');
         }
+        // Android WebView lacks the Web Speech API; prefer the native bridge.
+        const native = window.AndroidTTS;
+        if (native && typeof native.speak === 'function') {
+            return new Promise(resolve => {
+                let done = false;
+                const finish = () => { if (!done) { done = true; resolve(); } };
+                window.__ttsDone = finish;
+                const deadline = Date.now() + 4000;
+                const trySpeak = () => {
+                    if (done) return;
+                    if (native.isReady()) {
+                        native.speak(ttsText, isMs ? 'ms' : 'en');
+                        // Safety net if the native onDone callback is missed.
+                        setTimeout(finish, Math.max(10000, 45000 / this._speed));
+                    } else if (Date.now() < deadline) {
+                        setTimeout(trySpeak, 150);
+                    } else {
+                        finish();
+                    }
+                };
+                trySpeak();
+            });
+        }
+        if (!('speechSynthesis' in window)) return Promise.resolve();
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(ttsText);
         utterance.lang = isMs ? 'ms-MY' : 'en-US';
         utterance.rate = this._speed;
