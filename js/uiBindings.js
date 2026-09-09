@@ -2286,15 +2286,22 @@ class UiBindings {
 
         this._deferredPrompt = null;
 
+        // Inside the Capacitor APK the app is already installed natively, so
+        // never surface the PWA install widget there (event wiring below is
+        // kept intact; only the display triggers are guarded).
+        const isNativeCapacitor = !!(window.Capacitor
+            && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform());
+
         // Listen for beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             this._deferredPrompt = e;
-            
+
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
             const isDismissed = localStorage.getItem('hm-dismiss-install') === 'true';
-            
-            if (!isStandalone && !isDismissed) {
+
+            if (!isNativeCapacitor && !isStandalone && !isDismissed) {
                 this.pwaInstallWidget.style.display = 'flex';
             }
         });
@@ -2303,8 +2310,8 @@ class UiBindings {
         const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
         const isDismissed = localStorage.getItem('hm-dismiss-install') === 'true';
-        
-        if (isMobileOrTablet && !isStandalone && !isDismissed) {
+
+        if (!isNativeCapacitor && isMobileOrTablet && !isStandalone && !isDismissed) {
             this.pwaInstallWidget.style.display = 'flex';
         }
 

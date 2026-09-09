@@ -69,6 +69,61 @@ This application is PWA-enabled, allowing you to install it directly onto your d
 * **Android (Chrome)**: Tap the three-dot menu and select **Install App**.
 * **Offline Access & Cache**: Assets, scripts, stylesheets, and 3D GLTF models are cached locally. The app checks for newer updates automatically every 30 minutes and prompts a reload banner when updates are ready.
 
+<details>
+<summary><h2 style="display:inline">🤖 Android APK (Capacitor)</h2></summary>
+
+For devices that cannot install PWAs (e.g. kids tablets with locked-down browsers), the app ships as a native Android APK wrapped with [Capacitor](https://capacitorjs.com). The web app and PWA remain unchanged — the APK serves the same static files from local assets.
+
+### Prerequisites
+
+* **JDK 21** — Capacitor 8's Android toolchain requires it: `brew install openjdk@21`
+* **Android SDK** — Command-line tools or Android Studio: `sdkmanager "platforms;android-36" "build-tools;36.0.0"`
+* `ANDROID_HOME` pointing to the SDK (e.g. `~/Library/Android/sdk`)
+
+### Build & Install
+
+```bash
+npm run android:apk              # stage www/, sync, build debug APK
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+The debug APK lands at `android/app/build/outputs/apk/debug/app-debug.apk` (~13 MB).
+
+Other commands:
+
+```bash
+npm run cap:prepare              # stage the web app into www/ only
+npm run cap:sync                 # stage + copy www/ into the Android project
+npm run android:apk-release      # build signed release APK (via keystore.properties)
+node scripts/generate-android-icons.js   # regenerate launcher icons + splashes
+```
+
+### App Identity & Versioning
+
+* Package ID: `com.handmath.app`, App Name: `Hand Math` (configured in `capacitor.config.json`).
+* **Version bumps**: update `version` in `package.json` **and** `versionCode` / `versionName` in `android/app/build.gradle`. `versionCode` must increase monotonically for update installs.
+
+### Release Signing
+
+Release builds automatically sign via `android/keystore.properties` (git-ignored):
+
+```properties
+storeFile=handmath-release.keystore
+storePassword=yourPassword
+keyAlias=handmath
+keyPassword=yourPassword
+```
+
+Run `npm run android:apk-release` to generate the signed APK at `android/app/build/outputs/apk/release/app-release.apk`. For a Google Play bundle, run `cd android && ./gradlew bundleRelease`.
+
+### Native-specific Behaviour
+
+Inside the APK WebView:
+* Service Worker registration is skipped (assets are local; nothing to cache) — `js/main.js`.
+* The PWA "Install Hand Math" widget is suppressed (the app is already installed natively) — `js/uiBindings.js`.
+* All teaching, arithmetic, challenge, and 3D features function identically to the web app.
+
+</details>
 
 <details>
 <summary><h2 style="display:inline">📁 Project Structure</h2></summary>
@@ -78,6 +133,11 @@ Hand_Math/
 ├── index.html               # Main app entry point (334 lines)
 ├── teaching.html            # Standalone teaching UI (no skin/i18n)
 ├── package.json
+├── capacitor.config.json    # Capacitor wrapper config (appId, webDir)
+├── scripts/
+│   ├── generateChangelog.js # Generates js/changelog.js from git history
+│   ├── prepare-www.js       # Stages the web app into www/ for Capacitor
+│   └── generate-android-icons.js # Renders launcher icons + splashes from icon.svg
 ├── styles/
 │   ├── main.css             # Core layout, theme, controls, responsive
 │   └── teaching.css         # Teaching panels, tabs, tour overlay, halos, cues
@@ -108,6 +168,8 @@ Hand_Math/
 │   ├── rigged_hand.glb      # Original Sketchfab download
 │   └── *.zip                # Original source archives
 ├── vendor/threejs/          # Three.js, OrbitControls, GLTFLoader (MIT)
+├── android/                 # Capacitor Android project (committed; builds via Gradle)
+├── www/                     # Staged web assets for the APK (git-ignored, generated)
 ├── specs/                   # EARS-format requirements, design docs, ADRs
 ├── tests/                   # 17 Playwright spec files
 └── test-results/            # Screenshots and diagnostics
