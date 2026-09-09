@@ -1916,6 +1916,11 @@ window.addEventListener('beforeunload', () => {
 
 // ─── Service Worker Registration (PWA) ───────────────────────────
 (function registerServiceWorker() {
+    // Inside the Capacitor APK the app is served from bundled local assets;
+    // the service worker has nothing to cache there, so skip it entirely.
+    // window.Capacitor is injected by the native WebView bridge (no web-side
+    // dependency on @capacitor/core).
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return;
     if (!('serviceWorker' in navigator)) return;
 
     let refreshing = false;
