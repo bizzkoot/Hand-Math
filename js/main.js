@@ -132,8 +132,20 @@ class HandMathApp {
             canvas: this.canvas,
             antialias: true,
             alpha: true,
-            powerPreference: "high-performance"
+            powerPreference: "default"
         });
+
+        // Context loss / restore handlers
+        this.canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('⚠️ WebGL Context Lost! Waiting for restoration...');
+        }, false);
+
+        this.canvas.addEventListener('webglcontextrestored', () => {
+            console.log('🔄 WebGL Context Restored! Re-initializing renderer...');
+            this.setupRenderer();
+            this.renderer.render(this.scene, this.camera);
+        }, false);
 
         this.renderer.setSize(
             this.sceneContainer.clientWidth,
@@ -360,6 +372,13 @@ class HandMathApp {
         const bones = this.extractFingerBones(model);
         model.userData.bones = bones;
         model.userData.fingers = this.createFingerStructureFromBones(bones);
+
+        // Store references to all skinned meshes for skeleton updates
+        const meshes = [];
+        model.traverse((child) => {
+            if (child.isSkinnedMesh) meshes.push(child);
+        });
+        model.userData.meshes = meshes;
 
         console.log(`Hand model setup complete with proven positioning:`, {
             side: side,
@@ -624,6 +643,9 @@ class HandMathApp {
 
         if (this.canvas) {
             this.canvas.addEventListener('pointerdown', this.onCanvasPointerDown.bind(this));
+            this.canvas.addEventListener('touchstart', (e) => {
+                this.onCanvasPointerDown(e);
+            }, { passive: true });
         }
 
         // +/- Hand control buttons
@@ -756,8 +778,13 @@ class HandMathApp {
         if (!this.leftHand || !this.rightHand || !this.handController) return;
 
         const rect = this.canvas.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        const touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+        const clientX = event.clientX !== undefined ? event.clientX : (touch ? touch.clientX : null);
+        const clientY = event.clientY !== undefined ? event.clientY : (touch ? touch.clientY : null);
+        if (clientX === null || clientY === null) return;
+
+        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
         const mouse = new THREE.Vector2(x, y);
         const raycaster = new THREE.Raycaster();
@@ -823,7 +850,7 @@ class HandMathApp {
             }
         }
 
-        if (minDistance < 0.4) {
+        if (minDistance < 0.55) {
             return closestFinger;
         }
         return null;

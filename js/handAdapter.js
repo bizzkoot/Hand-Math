@@ -22,6 +22,13 @@ class HandAdapter {
         switch (mode) {
             case 'instant':
                 apply();
+                ['left', 'right'].forEach(side => {
+                    const pattern = side === 'left' ? leftPattern : rightPattern;
+                    ['thumb', 'index', 'middle', 'ring', 'pinky'].forEach(f => {
+                        const pos = pattern[f] ? 1 : 0;
+                        this.handController.setFingerToPositionImmediate(side, f, pos);
+                    });
+                });
                 break;
             case 'step':
             default:
