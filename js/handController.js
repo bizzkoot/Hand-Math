@@ -765,30 +765,19 @@ class HandController {
      * Update skeleton for GLTF skinned meshes to ensure mesh follows bone animations
      */
     updateHandSkeleton(hand) {
-        if (!hand || !hand.userData.meshes) return;
+        if (!hand) return;
         
-        // Update all skinned meshes in the hand
-        hand.userData.meshes.forEach(mesh => {
+        const updateMesh = (mesh) => {
             if (mesh.isSkinnedMesh && mesh.skeleton) {
-                // Update the skeleton to reflect bone changes
                 mesh.skeleton.update();
-                
-                // Ensure the mesh binds to current bone positions
-                if (mesh.skeleton.boneMatrices) {
-                    mesh.skeleton.computeBoneTexture();
-                }
             }
-        });
-        
-        // Also update any direct skinned mesh children
-        hand.traverse((child) => {
-            if (child.isSkinnedMesh && child.skeleton) {
-                child.skeleton.update();
-                if (child.skeleton.boneMatrices) {
-                    child.skeleton.computeBoneTexture();
-                }
-            }
-        });
+        };
+
+        if (hand.userData && Array.isArray(hand.userData.meshes) && hand.userData.meshes.length > 0) {
+            hand.userData.meshes.forEach(updateMesh);
+        } else {
+            hand.traverse(updateMesh);
+        }
     }
     
     /**

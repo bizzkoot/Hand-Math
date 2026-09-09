@@ -337,6 +337,13 @@
     <script src="js/uiBindings.js"></script>
     <script src="js/testApi.js"></script>
     <script>
+        window.addEventListener('error', (e) => {
+            console.error('HandMath Global Error:', e.message, e.filename, e.lineno);
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('HandMath Unhandled Rejection:', e.reason);
+        });
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Initialize i18n
             await window.i18n.init();
