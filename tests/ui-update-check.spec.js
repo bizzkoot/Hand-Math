@@ -6,6 +6,7 @@
 const { test, expect } = require('@playwright/test');
 
 const RELEASES_URL = 'https://api.github.com/repos/bizzkoot/Hand-Math/releases/latest';
+const LATEST_JSON_URL = 'https://raw.githubusercontent.com/bizzkoot/Hand-Math/main/latest.json';
 
 const releasePayload = (tag, name, notes, apkName) => ({
     tag_name: tag,
@@ -113,7 +114,9 @@ test.describe('In-app update checker', () => {
   });
 
   test('network failure fails silently on auto-check and reports on manual check', async ({ page }) => {
+    // Both the API and the latest.json fallback must be dead for this path
     await page.route(RELEASES_URL, route => route.abort('connectionrefused'));
+    await page.route(LATEST_JSON_URL, route => route.abort('connectionrefused'));
 
     await gotoApp(page);
 
@@ -124,6 +127,59 @@ test.describe('In-app update checker', () => {
     // Forced check explains the failure instead of hanging
     await page.evaluate(() => window.handMathApp.updateChecker.checkForUpdate(true));
     await expect(page.locator('#updateModalTitle')).toContainText('failed');
+  });
+
+  test('rate-limited API falls back to latest.json and still alerts', async ({ page }) => {
+    await page.route(RELEASES_URL, route => route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'API rate limit exceeded' })
+    }));
+    await page.route(LATEST_JSON_URL, route => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ tag: 'v9.9.9' })
+    }));
+
+    await gotoApp(page);
+    await page.evaluate(() => window.handMathApp.updateChecker.checkForUpdate(true));
+
+    await expect(page.locator('#updateModal')).toBeVisible();
+    await expect(page.locator('#updateModal')).toContainText('v9.9.9');
+    // No APK asset known from the fallback: download button points at the
+    // releases/latest page
+    const downloadLink = page.locator('#updateModalFoot a', { hasText: 'Download update' });
+    await expect(downloadLink).toHaveAttribute('href', /releases\/latest$/);
+  });
+
+  test('auto-checks are throttled: a recent successful check makes no network request', async ({ page }) => {
+    let apiCalls = 0;
+    await page.route(RELEASES_URL, route => { apiCalls += 1; route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(releasePayload('v1.0.5', 'Hand Math v1.0.5', 'notes', 'HandMath-v1.0.5.apk'))
+    }); });
+
+    await page.addInitScript(() => {
+        // Pretend we successfully checked 5 minutes ago
+        const now = Date.now();
+        localStorage.setItem('hm-update-last-check', String(now - 5 * 60 * 1000));
+        localStorage.setItem('hm-update-last-attempt', String(now - 5 * 60 * 1000));
+    });
+
+    const local = process.env.HM_LOCAL_FILE === '1';
+    await page.goto(local ? 'index.html' : '/index.html');
+    await page.waitForFunction(() => window.handMathApp && window.handMathApp.updateChecker, null, { timeout: 60000 });
+
+    // Past the initial 3s delay + a margin: the throttled auto-check must
+    // not have hit the network.
+    await page.waitForTimeout(6000);
+    expect(apiCalls).toBe(0);
+
+    // Manual check bypasses the throttle
+    await page.evaluate(() => window.handMathApp.updateChecker.checkForUpdate(true));
+    await page.waitForTimeout(1000);
+    expect(apiCalls).toBe(1);
   });
 
   test('version comparison is numeric, not lexicographic', async ({ page }) => {

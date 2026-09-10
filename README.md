@@ -115,11 +115,14 @@ node scripts/generate-android-icons.js   # regenerate launcher icons + splashes
 
 The app self-checks for newer releases (modeled on the native update flow of `bizzkoot/lnreader`):
 
-* On startup (~3s after load) and every 30 minutes (plus on app resume), `js/updateChecker.js` fetches `https://api.github.com/repos/bizzkoot/Hand-Math/releases/latest` and compares the release tag against the packaged `HANDMATH_VERSION` (`js/appVersion.js`).
+* On startup (~3s after load) and on app resume, `js/updateChecker.js` compares the latest release tag against the packaged `HANDMATH_VERSION` (`js/appVersion.js`). Auto-checks are **throttled** (GitHub's unauthenticated API allows only 60 requests/hour per IP): at most one network attempt every 30 minutes and one successful refresh every 3 hours.
+* Primary source is `https://api.github.com/repos/bizzkoot/Hand-Math/releases/latest`. If the API is rate-limited (403/429) or unreachable, it falls back to `latest.json` in the repo (served by `raw.githubusercontent.com`, which is CORS-enabled and not API-rate-limited). The fallback has no APK asset URL or notes, so the download button opens the releases/latest page.
 * When a newer tag exists, a modal alerts the user with the release notes and a **Download update** button that opens the release APK (`*.apk` asset) in the system browser, where Android handles the download and install prompt.
 * "Skip this version" remembers the dismissed release (`localStorage['hm-update-skip']`) so the auto-alert stays quiet for it; a manual **Check for updates** button in the Changelog modal always overrides the skip and reports "up to date" too.
-* Network failures are silent for automatic checks; manual checks show a retry dialog.
+* Network failures are silent for automatic checks; manual checks show a retry dialog (with a specific message when the API is rate-limited).
 * Version comparison is numeric per segment (e.g. `v1.0.10 > v1.0.9`), tolerant of a missing `v` prefix.
+
+**Release procedure (per release)**: bump the three version sources → build & sign the APK → `gh release create vX.Y.Z HandMath-vX.Y.Z.apk --latest` → update `latest.json` with the new tag and push (safe ordering: publish the release first, `latest.json` second — a stale `latest.json` can only under-report, never point users at a missing APK).
 
 ### Release Signing
 

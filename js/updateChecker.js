@@ -21,7 +21,8 @@ class UpdateChecker {
         this.currentVersion = (typeof window.HANDMATH_VERSION === 'string')
             ? window.HANDMATH_VERSION
             : '0.0.0';
-        this.intervalMs = 30 * 60 * 1000; // re-check every 30 minutes
+        this.autoAttemptIntervalMs = 30 * 60 * 1000; // min gap between auto network attempts
+        this.autoSuccessIntervalMs = 3 * 60 * 60 * 1000; // min gap between successful auto refreshes
         this.initialDelayMs = 3000;       // let the app settle before first check
         this._timer = 0;
         this._modal = null;
@@ -31,7 +32,9 @@ class UpdateChecker {
     start() {
         if (this._timer) return;
         setTimeout(() => this.checkForUpdate(false), this.initialDelayMs);
-        this._timer = setInterval(() => this.checkForUpdate(false), this.intervalMs);
+        // Re-check periodically; checkForUpdate's throttle decides whether
+        // each tick actually hits the network.
+        this._timer = setInterval(() => this.checkForUpdate(false), this.autoAttemptIntervalMs);
         // Re-check when returning to a long-lived app (e.g. Android APK)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') this.checkForUpdate(false);
@@ -81,19 +84,36 @@ class UpdateChecker {
 
     async checkForUpdate(force) {
         if (this._checking) return;
+        // GitHub's unauthenticated API allows only 60 requests/hour PER IP,
+        // which shared networks (home/school NAT, mobile carriers) exhaust
+        // quickly. Auto-checks are therefore throttled: at most one network
+        // attempt every 30 minutes, and at most one *successful* refresh
+        // every 3 hours. Manual checks always bypass the throttle.
+        const now = Date.now();
+        if (!force) {
+            const lastAttempt = parseInt(window.HMSettings.get(window.HMSettings.KEYS.UPDATE_LAST_ATTEMPT, '0'), 10) || 0;
+            const lastSuccess = parseInt(window.HMSettings.get(window.HMSettings.KEYS.LAST_UPDATE_CHECK, '0'), 10) || 0;
+            if (now - lastAttempt < this.autoAttemptIntervalMs) return;
+            if (now - lastSuccess < this.autoSuccessIntervalMs) return;
+        }
         this._checking = true;
         try {
+            window.HMSettings.set(window.HMSettings.KEYS.UPDATE_LAST_ATTEMPT, now);
             const release = await this._fetchLatestRelease();
             if (!release || !release.tag) {
+                window.HMSettings.set(window.HMSettings.KEYS.LAST_UPDATE_CHECK, now);
                 if (force) this._showUpToDate(null);
                 return;
             }
             const isNewer = UpdateChecker.compareVersions(release.tag, this.currentVersion) > 0;
             if (!isNewer) {
-                try { window.HMSettings.set(window.HMSettings.KEYS.LAST_UPDATE_CHECK, Date.now()); } catch (_) {}
+                window.HMSettings.set(window.HMSettings.KEYS.LAST_UPDATE_CHECK, now);
                 if (force) this._showUpToDate(release);
                 return;
             }
+            // A successful check found a newer release — record the time so
+            // the throttle counts from now even if the user skips it.
+            window.HMSettings.set(window.HMSettings.KEYS.LAST_UPDATE_CHECK, now);
             const skipped = window.HMSettings.get(window.HMSettings.KEYS.UPDATE_SKIP, null);
             if (!force && skipped && UpdateChecker.compareVersions(release.tag, skipped) <= 0) {
                 return; // user already dismissed this release
@@ -101,13 +121,34 @@ class UpdateChecker {
             this._showUpdateModal(release);
         } catch (err) {
             try { console.warn('[UpdateChecker] check failed:', err && err.message ? err.message : err); } catch (_) {}
-            if (force) this._showError();
+            if (force) this._showError(UpdateChecker._isRateLimit(err));
         } finally {
             this._checking = false;
         }
     }
 
+    static _isRateLimit(err) {
+        const msg = String(err && err.message || err || '');
+        return /\b(403|429)\b/.test(msg);
+    }
+
     async _fetchLatestRelease() {
+        // Primary: GitHub REST API (rich data: exact APK asset URL).
+        try {
+            return await this._fetchLatestReleaseFromApi();
+        } catch (err) {
+            // Fallback: the unauthenticated API allows only 60 requests/hour
+            // per IP (shared NAT/carrier networks exhaust it), so fall back
+            // to a tiny latest.json committed next to the release. It is
+            // served by raw.githubusercontent.com, which is NOT subject to
+            // the API rate limit and sends CORS headers (github.com pages do
+            // not, so the releases.atom feed cannot be fetched from JS).
+            try { console.warn('[UpdateChecker] API unavailable, trying latest.json fallback:', err && err.message); } catch (_) {}
+            return await this._fetchLatestReleaseFromLatestJson();
+        }
+    }
+
+    async _fetchLatestReleaseFromApi() {
         const url = `https://api.github.com/repos/${this.repo}/releases/latest`;
         const resp = await fetch(url, {
             headers: { 'Accept': 'application/vnd.github+json' },
@@ -124,6 +165,28 @@ class UpdateChecker {
             notes: data.body || '',
             htmlUrl: data.html_url || `https://github.com/${this.repo}/releases/latest`,
             apkUrl: apkAsset ? apkAsset.browser_download_url : null
+        };
+    }
+
+    /**
+     * Fallback: parse latest.json from the repo (served by
+     * raw.githubusercontent.com — CORS-enabled and NOT API-rate-limited):
+     * { "tag": "v1.0.5" }. No APK asset URL or notes here; the modal falls
+     * back to the release page for the download.
+     */
+    async _fetchLatestReleaseFromLatestJson() {
+        const resp = await fetch(`https://raw.githubusercontent.com/${this.repo}/main/latest.json`, {
+            cache: 'no-store'
+        });
+        if (!resp.ok) throw new Error(`latest.json ${resp.status}`);
+        const data = await resp.json();
+        if (!data || typeof data.tag !== 'string' || !/^v?[\d]/.test(data.tag)) return null;
+        return {
+            tag: data.tag,
+            name: '',
+            notes: '',
+            htmlUrl: `https://github.com/${this.repo}/releases/latest`,
+            apkUrl: null
         };
     }
 
@@ -184,15 +247,18 @@ class UpdateChecker {
         modal.hidden = false;
     }
 
-    _showError() {
+    _showError(rateLimited) {
         const modal = this._ensureModal();
         modal.querySelector('#updateModalTitle').textContent =
             UpdateChecker._t('update.checkFailedTitle', 'Update check failed');
         const body = modal.querySelector('#updateModalBody');
         body.innerHTML = '';
         const p = document.createElement('p');
-        p.textContent = UpdateChecker._t('update.checkFailedText',
-            'Could not reach GitHub. Check your internet connection and try again.');
+        p.textContent = rateLimited
+            ? UpdateChecker._t('update.rateLimitedText',
+                'GitHub is limiting update checks from your network right now. Please try again in a little while.')
+            : UpdateChecker._t('update.checkFailedText',
+                'Could not reach GitHub. Check your internet connection and try again.');
         body.appendChild(p);
         const foot = modal.querySelector('#updateModalFoot');
         foot.innerHTML = '';
