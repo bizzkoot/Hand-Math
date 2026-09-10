@@ -109,7 +109,17 @@ node scripts/generate-android-icons.js   # regenerate launcher icons + splashes
 ### App Identity & Versioning
 
 * Package ID: `com.handmath.app`, App Name: `Hand Math` (configured in `capacitor.config.json`).
-* **Version bumps**: update `version` in `package.json` **and** `versionCode` / `versionName` in `android/app/build.gradle`. `versionCode` must increase monotonically for update installs.
+* **Version bumps**: update `version` in `package.json`, `versionCode` / `versionName` in `android/app/build.gradle`, and `HANDMATH_VERSION` in `js/appVersion.js`. `versionCode` must increase monotonically for update installs.
+
+### In-App Update Checker (GitHub Releases)
+
+The app self-checks for newer releases (modeled on the native update flow of `bizzkoot/lnreader`):
+
+* On startup (~3s after load) and every 30 minutes (plus on app resume), `js/updateChecker.js` fetches `https://api.github.com/repos/bizzkoot/Hand-Math/releases/latest` and compares the release tag against the packaged `HANDMATH_VERSION` (`js/appVersion.js`).
+* When a newer tag exists, a modal alerts the user with the release notes and a **Download update** button that opens the release APK (`*.apk` asset) in the system browser, where Android handles the download and install prompt.
+* "Skip this version" remembers the dismissed release (`localStorage['hm-update-skip']`) so the auto-alert stays quiet for it; a manual **Check for updates** button in the Changelog modal always overrides the skip and reports "up to date" too.
+* Network failures are silent for automatic checks; manual checks show a retry dialog.
+* Version comparison is numeric per segment (e.g. `v1.0.10 > v1.0.9`), tolerant of a missing `v` prefix.
 
 ### Release Signing
 
@@ -249,6 +259,10 @@ Chrome 60+, Firefox 55+, Safari 12+, Edge 79+ (WebGL required)
 ```js
 handMathApp.setSkinColor('#c79a6b');
 ```
+
+### Settings Persistence
+
+All user settings are saved to `localStorage` (via `js/settingsStore.js`) and restored on the next app open: theme (`hm-theme`), language (`hm_lang`), sound mute (`hm-sound-muted`), skin tone (`hm-skin-hex`), narration speed (`hm-speed`), explicit narration on/off (`hm-tts-enabled`), screen wake (`hm-screen-wake`), operand level (`hm_operand_level`), and challenge progress. Regressive coverage lives in `tests/ui-settings-persistence.spec.js`.
 
 Valid hex formats: `#RGB` or `#RRGGBB`. Invalid values return `false`.
 

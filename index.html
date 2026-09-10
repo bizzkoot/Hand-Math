@@ -282,6 +282,7 @@
                     <div id="changelogList" class="hm-changelog-list"></div>
                 </div>
                 <div class="hm-modal-foot">
+                    <button id="btnCheckUpdates" class="hm-btn" data-i18n="update.checkButton" data-i18n-title="update.checkTooltip">Check for updates</button>
                     <button id="changelogCloseBtn" class="hm-btn hm-btn-primary" data-i18n="changelog.close">Close</button>
                 </div>
             </div>
@@ -325,6 +326,9 @@
     <script src="js/handDebug.js"></script>
     <script src="js/handMathCalculator.js"></script>
     <script src="js/skinToneService.js"></script>
+    <script src="js/settingsStore.js"></script>
+    <script src="js/appVersion.js"></script>
+    <script src="js/updateChecker.js"></script>
     <script>window.HANDMATH_STRICT_GLTF = true;</script>
     <script src="js/i18n.js"></script>
     <script src="js/changelog.js"></script>
@@ -375,10 +379,24 @@
                 const picker = document.getElementById('hmSkin');
                 const input = document.getElementById('hmSkinHex');
                 const svc = () => window.handMathApp?.skinToneService;
+                const highlightSwatch = (hex) => {
+                    if (!picker) return;
+                    picker.querySelectorAll('.hm-swatch').forEach(b => {
+                        b.classList.toggle('is-active', !!hex && b.dataset.hex === hex);
+                    });
+                };
                 const setHex = (h) => {
                     if (!h) return;
                     window.handMathApp?.setSkinColor(h);
-                    if (input) input.value = SkinToneService.isValidHex(h) ? SkinToneService._normalizeHex(h) : (input.value || '');
+                    if (SkinToneService.isValidHex(h)) {
+                        const norm = SkinToneService._normalizeHex(h);
+                        // Persist so the choice is restored on next app open
+                        window.HMSettings?.set(window.HMSettings.KEYS.SKIN_HEX, norm);
+                        if (input) input.value = norm;
+                        highlightSwatch(norm);
+                    } else if (input) {
+                        input.value = input.value || '';
+                    }
                 };
                 if (picker) {
                     picker.addEventListener('click', (e) => {
@@ -389,9 +407,13 @@
                 if (input) {
                     input.addEventListener('change', () => setHex(input.value));
                     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') setHex(input.value); });
-                    // Seed with default if available
-                    const def = svc()?.defaultHex;
-                    if (def) input.value = def;
+                    // Seed with the restored (or default) skin tone and
+                    // reflect it on the swatches immediately (deterministic
+                    // even if the hands/skin service are still loading).
+                    const saved = window.HMSettings?.get(window.HMSettings.KEYS.SKIN_HEX, null);
+                    const initial = SkinToneService.isValidHex(saved) ? saved : svc()?.defaultHex;
+                    if (initial) input.value = SkinToneService._normalizeHex(initial);
+                    highlightSwatch(input.value);
                     // Ensure materials are cached if service attached
                     try { svc()?.cacheMaterials(); } catch(_){}
                 }
