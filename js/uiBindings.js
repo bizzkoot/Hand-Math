@@ -111,6 +111,7 @@ class UiBindings {
             ? savedLevel
             : OPERAND_LEVEL_DEFAULT;
         this._wire();
+        this._restoreSettings();
         this._initChallenge();
         this._render();
         this._unsub = this.o.onChange(() => this._render());
@@ -236,6 +237,10 @@ class UiBindings {
         this.btnNarrate?.addEventListener('click', () => {
             this.soundSynth.playClick();
             this._ttsEnabled = !this._ttsEnabled;
+            // Persist so the explicit user choice survives reloads. When the
+            // user never touched this button, _toggleAuto keeps its legacy
+            // default of enabling narration together with Auto.
+            window.HMSettings?.set(window.HMSettings.KEYS.TTS_ENABLED, String(this._ttsEnabled));
             this.btnNarrate.setAttribute('aria-pressed', String(this._ttsEnabled));
             if (!this._ttsEnabled) this._stopSpeech();
         });
@@ -278,6 +283,8 @@ class UiBindings {
             const muted = this.soundSynth.muted;
             this.soundSynth.setMuted(!muted);
             this.btnSound.setAttribute('aria-pressed', String(!muted));
+            // Persist so the choice is restored on next app open
+            window.HMSettings?.set(window.HMSettings.KEYS.SOUND_MUTED, String(!muted));
             this._updateSoundButtonLabels();
             const soundOnSvg = this.btnSound.querySelector('.sound-on');
             const soundOffSvg = this.btnSound.querySelector('.sound-off');
@@ -335,6 +342,12 @@ class UiBindings {
         };
         this.changelogClose?.addEventListener('click', () => { this.soundSynth.playClick(); toggleChangelog(false); });
         this.changelogCloseBtn?.addEventListener('click', () => { this.soundSynth.playClick(); toggleChangelog(false); });
+        document.getElementById('btnCheckUpdates')?.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            // Manual check always shows a result (also when up to date) and
+            // ignores a previously skipped version.
+            window.handMathApp?.updateChecker?.checkForUpdate(true);
+        });
         this.toggleChangelog = toggleChangelog;
 
         document.addEventListener('keydown', (e) => {
@@ -1739,8 +1752,12 @@ class UiBindings {
         if (this.btnNarrate) {
             this.btnNarrate.hidden = !next;
             if (next) {
-                this._ttsEnabled = true;
-                this.btnNarrate.setAttribute('aria-pressed', 'true');
+                // Honor the user's saved narrate preference when they have
+                // explicitly toggled narration before; legacy default keeps
+                // narration on when Auto starts.
+                const savedNarrate = window.HMSettings ? window.HMSettings.get(window.HMSettings.KEYS.TTS_ENABLED, null) : null;
+                this._ttsEnabled = savedNarrate === null ? true : savedNarrate === 'true';
+                this.btnNarrate.setAttribute('aria-pressed', String(this._ttsEnabled));
             }
         }
         if (next) {
@@ -1756,6 +1773,42 @@ class UiBindings {
         if (next < SPEED_MIN || next > SPEED_MAX) return;
         this._speed = next;
         if (this.speedLabel) this.speedLabel.textContent = next.toFixed(1) + '\u00d7';
+        // Persist so the choice is restored on next app open
+        window.HMSettings?.set(window.HMSettings.KEYS.SPEED, String(next));
+    }
+
+    /**
+     * Restore every persisted setting at startup, in the same place the
+     * corresponding toggle would have left it. Each restore mirrors the
+     * handler's UI updates so a restored state is indistinguishable from a
+     * freshly clicked one.
+     */
+    _restoreSettings() {
+        const K = window.HMSettings ? window.HMSettings.KEYS : null;
+        if (!K) return;
+
+        // Sound mute (aria-pressed reflects the muted state; sound-on icon
+        // is shown when unmuted — mirroring the btnSound click handler).
+        const savedMuted = window.HMSettings.get(K.SOUND_MUTED, null);
+        if (savedMuted === 'false') {
+            this.soundSynth.setMuted(false);
+            if (this.btnSound) {
+                this.btnSound.setAttribute('aria-pressed', 'false');
+                const soundOn = this.btnSound.querySelector('.sound-on');
+                const soundOff = this.btnSound.querySelector('.sound-off');
+                if (soundOn && soundOff) {
+                    soundOn.style.display = 'block';
+                    soundOff.style.display = 'none';
+                }
+            }
+        }
+
+        // Narration speed multiplier
+        const savedSpeed = parseFloat(window.HMSettings.get(K.SPEED, ''));
+        if (!isNaN(savedSpeed) && savedSpeed >= SPEED_MIN && savedSpeed <= SPEED_MAX) {
+            this._speed = savedSpeed;
+            if (this.speedLabel) this.speedLabel.textContent = savedSpeed.toFixed(1) + '\u00d7';
+        }
     }
 
     _renderPanelHeader(s) {

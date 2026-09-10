@@ -59,6 +59,18 @@ class HandMathApp {
             if (typeof window !== 'undefined' && window.SkinToneService) {
                 this.skinToneService = new window.SkinToneService(this);
                 this.skinToneService.init();
+                // Restore the skin tone the user chose last session. Must run
+                // after hands are loaded so the service can actually reach the
+                // materials (see SkinToneService.cacheMaterials).
+                const savedSkin = window.HMSettings ? window.HMSettings.get(window.HMSettings.KEYS.SKIN_HEX, null) : null;
+                if (savedSkin && SkinToneService.isValidHex(savedSkin)) {
+                    this.setSkinColor(savedSkin);
+                }
+            }
+            // Start the GitHub release update checker (in-app update alerts)
+            if (typeof window !== 'undefined' && window.UpdateChecker) {
+                this.updateChecker = new window.UpdateChecker(this);
+                this.updateChecker.start();
             }
             this.setupDebugFingerAnimator();
             this._debugFinger = { active: false, samples: [], baseline: null };
@@ -642,10 +654,22 @@ class HandMathApp {
         // this.setupRotationControls();
 
         if (this.canvas) {
-            this.canvas.addEventListener('pointerdown', this.onCanvasPointerDown.bind(this));
-            this.canvas.addEventListener('touchstart', (e) => {
+            // A single touch gesture fires BOTH `pointerdown` and `touchstart` on
+            // modern WebViews (Capacitor/Android included), a few ms apart. Both
+            // used to call onCanvasPointerDown, so one knuckle tap toggled the
+            // same finger twice (on then off) — taps looked dead/inconsistent on
+            // touch devices while mouse clicks (single event) worked. Handle only
+            // the first event of each gesture and swallow its twin.
+            this._lastCanvasTapHandled = 0;
+            const handleCanvasTap = (e) => {
+                const now = (typeof performance !== 'undefined' && performance.now)
+                    ? performance.now() : Date.now();
+                if (now - this._lastCanvasTapHandled < 700) return;
+                this._lastCanvasTapHandled = now;
                 this.onCanvasPointerDown(e);
-            }, { passive: true });
+            };
+            this.canvas.addEventListener('pointerdown', handleCanvasTap);
+            this.canvas.addEventListener('touchstart', handleCanvasTap, { passive: true });
         }
 
         // +/- Hand control buttons
