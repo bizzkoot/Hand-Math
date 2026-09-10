@@ -17,7 +17,8 @@
         OPERAND_LEVEL: 'hm_operand_level', // handled by operand badge (kept for reference)
         SKIN_HEX: 'hm-skin-hex',       // hand skin tone hex
         UPDATE_SKIP: 'hm-update-skip', // release tag the user chose to skip
-        LAST_UPDATE_CHECK: 'hm-update-last-check' // epoch ms of last successful check
+        LAST_UPDATE_CHECK: 'hm-update-last-check', // epoch ms of last successful check
+        UPDATE_LAST_ATTEMPT: 'hm-update-last-attempt' // epoch ms of last auto-check attempt (throttle)
     };
 
     const HMSettings = {

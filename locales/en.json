@@ -59,6 +59,7 @@
   "update.upToDateText": "Hand Math v{{current}} is the latest version.",
   "update.checkFailedTitle": "Update check failed",
   "update.checkFailedText": "Could not reach GitHub. Check your internet connection and try again.",
+  "update.rateLimitedText": "GitHub is limiting update checks from your network right now. Please try again in a little while.",
   "update.retry": "Retry",
   "update.checkButton": "Check for updates",
   "update.checkTooltip": "Check GitHub for a newer release",
