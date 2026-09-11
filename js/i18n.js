@@ -275,6 +275,8 @@ const LOCALES = {
         'challenge.scoreAnnounce': 'Score: {{score}}, Streak: {{streak}}, Stars: {{stars}}',
         'challenge.promptShow': 'Show {{value}} on your hands',
         'challenge.promptAnswer': 'Show the answer to: {{a}} {{op}} {{b}}',
+        'challenge.promptAnswerTitle': 'Show the answer to:',
+        'challenge.promptAnswerExpr': '{{a}} {{op}} {{b}}',
         'challenge.promptFallbackAdd': 'Show the answer to: 47 + 38',
         'challenge.promptFallbackSub': 'Show the answer to: 42 \u2212 17',
         'step.tens': 'Tens',
@@ -396,6 +398,9 @@ const LOCALES = {
         'challenge.hintTitle': 'Hint: target is between {{low}} and {{high}}',
         'challenge.unlockCurrent': 'Level {{level}}',
         'challenge.endGemBreakdown': 'Gold: {{gold}}  Silver: {{silver}}  Bronze: {{bronze}}',
+        'challenge.levelUpMsg': 'You\'re doing great! Try Level {{n}} ({{min}}\u2013{{max}})',
+        'challenge.levelUpBtn': 'Try Level {{n}}',
+        'challenge.levelUpApplied': 'Level {{n}} selected! Press Play Again.',
     },
     ms: {
         'header.title': 'Hand Math — Kira hingga 99',
@@ -559,6 +564,8 @@ const LOCALES = {
         'challenge.scoreAnnounce': 'Skor: {{score}}, Rekaan: {{streak}}, Bintang: {{stars}}',
         'challenge.promptShow': 'Tunjukkan {{value}} pada tangan anda',
         'challenge.promptAnswer': 'Tunjukkan jawapan untuk: {{a}} {{op}} {{b}}',
+        'challenge.promptAnswerTitle': 'Tunjukkan jawapan untuk:',
+        'challenge.promptAnswerExpr': '{{a}} {{op}} {{b}}',
         'challenge.promptFallbackAdd': 'Tunjukkan jawapan untuk: 47 + 38',
         'challenge.promptFallbackSub': 'Tunjukkan jawapan untuk: 42 \u2212 17',
         'step.tens': 'Puluh',
@@ -680,6 +687,9 @@ const LOCALES = {
         'challenge.hintTitle': 'Petunjuk: jawapan antara {{low}} dan {{high}}',
         'challenge.unlockCurrent': 'Tahap {{level}}',
         'challenge.endGemBreakdown': 'Emas: {{gold}}  Perak: {{silver}}  Gangsa: {{bronze}}',
+        'challenge.levelUpMsg': 'Anda hebat! Cuba Tahap {{n}} ({{min}}\u2013{{max}})',
+        'challenge.levelUpBtn': 'Cuba Tahap {{n}}',
+        'challenge.levelUpApplied': 'Tahap {{n}} dipilih! Tekan Main Semula.',
     }
 };
 

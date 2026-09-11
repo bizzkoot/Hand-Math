@@ -6,4 +6,4 @@
  * no synchronous way to read the native versionName from JS, so this
  * constant is the single source of truth for the packaged build.
  */
-window.HANDMATH_VERSION = '1.0.5';
+window.HANDMATH_VERSION = '1.0.6';

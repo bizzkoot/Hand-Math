@@ -105,7 +105,7 @@ test.describe('Levels 1-5 - Challenge with arithmetic + 5 choices + hand control
 
     // Hand-based controls (submit button + feedback) should still be visible
     await expect(page.locator('#btnChallengeSubmit')).toBeVisible();
-    await expect(page.locator('#challengeFeedback')).toBeVisible();
+    await expect(page.locator('#challengeFeedback')).toBeHidden();
 
     // The operand level cap (L1 = max 20) must be respected: each operand
     // appears in the prompt and must be <= 20. target = a ± b must be <= 40

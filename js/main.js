@@ -764,6 +764,7 @@ class HandMathApp {
         if (!rect.width || !rect.height) return;
 
         const tempV = new THREE.Vector3();
+        const pts = {};
 
         ['left', 'right'].forEach(side => {
             const el = document.getElementById(side === 'left' ? 'handControlsLeft' : 'handControlsRight');
@@ -784,6 +785,7 @@ class HandMathApp {
             if (x >= -50 && x <= rect.width + 50 && y >= -50 && y <= rect.height + 50) {
                 const key = '_hmBtnPos' + side;
                 el.style.display = '';
+                pts[side] = { x, y };
                 if (el[key] && Math.abs(el[key].x - x) < 2 && Math.abs(el[key].y - y) < 2) return;
                 el[key] = { x, y };
                 el.style.left = `${x}px`;
@@ -793,6 +795,16 @@ class HandMathApp {
                 el.style.display = 'none';
             }
         });
+
+        // Floating hands-value badge: same row as the +/- steppers,
+        // centered in the box between the left and right hands.
+        const badge = document.getElementById('handValueBadge');
+        if (badge && !badge.hidden && pts.left && pts.right) {
+            const mx = Math.round((pts.left.x + pts.right.x) / 2);
+            const my = Math.round((pts.left.y + pts.right.y) / 2);
+            badge.style.left = `${mx}px`;
+            badge.style.top = `${my}px`;
+        }
     }
 
     /**
@@ -1549,6 +1561,10 @@ class HandMathApp {
 
         // Update total display
         document.getElementById('total-value').textContent = total;
+
+        // Floating badge between the +/- steppers (same row, centered box).
+        const valueBadge = document.getElementById('handValueBadge');
+        if (valueBadge) valueBadge.textContent = String(total);
 
         // Update breakdown display
         const leftTens = leftValue * 10;
