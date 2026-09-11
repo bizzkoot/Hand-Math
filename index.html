@@ -133,6 +133,7 @@
                             <button class="hand-control-btn hand-control-minus" data-hand="left" data-i18n-aria="aria.handLeftDec">−</button>
                             <button class="hand-control-btn hand-control-plus" data-hand="left" data-i18n-aria="aria.handLeftInc">+</button>
                         </div>
+                        <div id="handValueBadge" class="hand-value-badge" hidden>0</div>
                         <div id="handControlsRight" class="hand-controls hand-controls-right" hidden>
                             <button class="hand-control-btn hand-control-minus" data-hand="right" data-i18n-aria="aria.handRightDec">−</button>
                             <button class="hand-control-btn hand-control-plus" data-hand="right" data-i18n-aria="aria.handRightInc">+</button>
@@ -213,7 +214,7 @@
                         
                         <div class="challenge-card">
                             <div id="challengePrompt" class="challenge-prompt"></div>
-                            <div id="challengeFeedback" class="challenge-feedback"></div>
+                            <div id="challengeFeedback" class="challenge-feedback" hidden></div>
                             <div id="challengeAttempts" class="challenge-attempts"></div>
                             <div id="mentalChoicesChallenge" class="hm-mental-choices" style="display: none;"></div>
                         </div>
@@ -231,6 +232,7 @@
                         <div id="challengeEndGemTray" class="challenge-end-gem-tray"></div>
                         <p id="challengeEndBreakdown" class="challenge-end-breakdown"></p>
                         <div id="challengeEndUnlock" class="challenge-end-unlock" hidden></div>
+                        <div id="challengeLevelUp" class="challenge-levelup" hidden></div>
                         <div class="challenge-actions" style="flex-direction: column; gap: 8px;">
                             <button id="btnChallengePlayAgain" class="hm-btn hm-btn-primary" style="width: 100%;" data-i18n="challenge.playAgain">Play Again</button>
                             <button id="btnChallengeEndExit" class="hm-btn" style="width: 100%;" data-i18n="challenge.returnMenu">Return to Menu</button>

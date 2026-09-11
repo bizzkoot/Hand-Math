@@ -529,6 +529,9 @@ class UiBindings {
             recentCorrect: 0,
             recentWrong: 0,
             consecutiveCorrect: 0,
+            // Wrong answers this session (any round, any level). Drives the
+            // end-of-session level-up suggestion: zero mistakes → suggest +1.
+            mistakes: 0,
             mentalStepCount: 3,
             // Persisted state
             difficultyTier: savedTier,
@@ -548,12 +551,14 @@ class UiBindings {
 
         // Hook into hand state updates for live feedback and auto-submit countdown
         window.onHandMathStateChange = (state) => {
+            // Keep the floating badge between the +/- steppers in sync even
+            // outside Challenge (Tutorial/Arithmetic also show steppers).
+            const badge = document.getElementById('handValueBadge');
+            if (badge && !badge.hidden) badge.textContent = String(state.total);
             if (this.operandLevel === 6) return;
             if (this.challenge && this.challenge.active && this.challenge.target !== null) {
-                const feedbackEl = document.getElementById('challengeFeedback');
-                if (feedbackEl && !feedbackEl.classList.contains('challenge-feedback-done')) {
-                    feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: state.total});
-                }
+                // Live hands value now lives in the floating badge between
+                // the +/- steppers; the card no longer shows it.
                 // When the user's hands match the target, start a short
                 // auto-submit countdown shown inside the Submit button. The
                 // user can still click Submit to accept immediately, or move
@@ -698,12 +703,16 @@ class UiBindings {
         this.challenge.recentCorrect = 0;
         this.challenge.recentWrong = 0;
         this.challenge.consecutiveCorrect = 0;
+        this.challenge.mistakes = 0;
 
         this._applyTierSettings();
 
         document.getElementById('challengeStartScreen').hidden = true;
         document.getElementById('challengeEndScreen').hidden = true;
         document.getElementById('challengePlayScreen').hidden = false;
+
+        // Clear any previous level-up suggestion/highlight on a fresh run.
+        this._clearLevelUpSuggestion();
 
         // Show hand controls during challenge
         this._setHandControlsVisibility(true);
@@ -714,8 +723,16 @@ class UiBindings {
     _setHandControlsVisibility(visible) {
         const left = document.getElementById('handControlsLeft');
         const right = document.getElementById('handControlsRight');
+        const badge = document.getElementById('handValueBadge');
         if (left) left.hidden = !visible;
         if (right) right.hidden = !visible;
+        // The hands-value badge sits between the left/right steppers; it is
+        // only meaningful while the steppers are shown (Challenge, Tutorial,
+        // Arithmetic). Hide it with them, and sync its number elsewhere.
+        if (badge) {
+            if (!visible || this.operandLevel === 6) badge.hidden = true;
+            else if (this.challenge && this.challenge.active) badge.hidden = false;
+        }
     }
 
     _loadNextChallengeQuestion() {
@@ -755,6 +772,8 @@ class UiBindings {
             const displayOp = prob.op === '-' ? '−' : '+';
             problem = {
                 prompt: window.i18n.t('challenge.promptAnswer', { a: prob.a, op: displayOp, b: prob.b }),
+                promptTitle: window.i18n.t('challenge.promptAnswerTitle'),
+                promptExpr: window.i18n.t('challenge.promptAnswerExpr', { a: prob.a, op: displayOp, b: prob.b }),
                 target: targetVal,
             };
         }
@@ -766,8 +785,9 @@ class UiBindings {
         this.challenge.elapsed = 0;
         this.challenge.questionStartTime = Date.now();
 
-        // Update UI
-        document.getElementById('challengePrompt').textContent = problem.prompt;
+        // Update UI: two-line prompt (title + arithmetic expression) so the
+        // expression never wraps mid-equation at narrow widths.
+        this._renderChallengePrompt(problem);
 
         const isMental = this.operandLevel === 6;
         // For Level 6: hide hand-based controls (multiple-choice only).
@@ -777,10 +797,11 @@ class UiBindings {
         document.getElementById('btnChallengeSubmit').hidden = isMental;
 
         const feedbackEl = document.getElementById('challengeFeedback');
-        if (feedbackEl) {
-            feedbackEl.hidden = isMental;
-            feedbackEl.textContent = window.i18n.t('challenge.yourHands', {value: 0});
-            feedbackEl.classList.remove('challenge-feedback-done');
+        if (feedbackEl) feedbackEl.hidden = true;
+        const valueBadge = document.getElementById('handValueBadge');
+        if (valueBadge) {
+            valueBadge.hidden = isMental;
+            valueBadge.textContent = '0';
         }
 
         const attemptsEl = document.getElementById('challengeAttempts');
@@ -825,6 +846,29 @@ class UiBindings {
         }, 200);
 
         this._announce(window.i18n.t('challenge.newQuestion', {prompt: problem.prompt}));
+    }
+
+    _renderChallengePrompt(problem) {
+        const el = document.getElementById('challengePrompt');
+        if (!el) return;
+        el.innerHTML = '';
+        if (problem.promptTitle && problem.promptExpr) {
+            const title = document.createElement('span');
+            title.className = 'challenge-prompt-title';
+            title.textContent = problem.promptTitle;
+            const expr = document.createElement('span');
+            expr.className = 'challenge-prompt-expr';
+            expr.textContent = problem.promptExpr;
+            el.appendChild(title);
+            el.appendChild(expr);
+        } else {
+            // Mental-arithmetic chain (Level 6) or legacy single-string
+            // prompt: single non-wrapping expression line.
+            const expr = document.createElement('span');
+            expr.className = 'challenge-prompt-expr';
+            expr.textContent = problem.prompt;
+            el.appendChild(expr);
+        }
     }
 
     _renderMentalChoices(container, target) {
@@ -940,6 +984,7 @@ class UiBindings {
                 });
 
                 this.challenge.consecutiveCorrect = 0;
+                this.challenge.mistakes++;
                 // Adaptive step difficulty down
                 this.challenge.mentalStepCount = Math.max(3, (this.challenge.mentalStepCount || 3) - 1);
 
@@ -1179,8 +1224,6 @@ class UiBindings {
         // Disable buttons
         document.getElementById('btnChallengeHint').disabled = true;
         document.getElementById('btnChallengeSubmit').disabled = true;
-        const feedbackEl = document.getElementById('challengeFeedback');
-        if (feedbackEl) feedbackEl.classList.add('challenge-feedback-done');
 
         this.challenge.target = null;
 
@@ -1203,6 +1246,7 @@ class UiBindings {
         this.soundSynth.playBuzzer();
 
         this.challenge.recentWrong++;
+        this.challenge.mistakes++;
         this.challenge.consecutiveCorrect = 0;
 
         // If all attempts used, skip
@@ -1256,8 +1300,6 @@ class UiBindings {
 
         document.getElementById('btnChallengeHint').disabled = true;
         document.getElementById('btnChallengeSubmit').disabled = true;
-        const feedbackEl = document.getElementById('challengeFeedback');
-        if (feedbackEl) feedbackEl.classList.add('challenge-feedback-done');
 
         // Adapt: make easier
         this.challenge.goldUntil = Math.min(10000, this.challenge.goldUntil + 1000);
@@ -1362,6 +1404,74 @@ class UiBindings {
                 unlockEl.hidden = true;
             }
         }
+
+        // Good-performance level-up suggestion (+1 operand level).
+        // Shown whenever the session had zero wrong answers — even an
+        // average (slow/bronze) run qualifies; only mistakes suppress it.
+        this._maybeShowLevelUpSuggestion();
+    }
+
+    _maybeShowLevelUpSuggestion() {
+        const box = document.getElementById('challengeLevelUp');
+        const badge = document.getElementById('operandLevelBadge');
+        if (!box) return;
+        const flawless = (this.challenge.mistakes | 0) === 0;
+        const next = this.operandLevel + 1;
+        if (!flawless || next > OPERAND_LEVEL_COUNT) {
+            box.hidden = true;
+            box.innerHTML = '';
+            if (badge) badge.classList.remove('hm-oplevel-suggest');
+            return;
+        }
+        const max = getOperandLevelMax(next);
+        box.hidden = false;
+        box.innerHTML = '';
+        const msg = document.createElement('div');
+        msg.textContent = window.i18n.t('challenge.levelUpMsg', { n: next, min: 1, max });
+        const btn = document.createElement('button');
+        btn.className = 'hm-btn hm-btn-primary challenge-levelup-btn';
+        btn.textContent = window.i18n.t('challenge.levelUpBtn', { n: next });
+        btn.addEventListener('click', () => {
+            this.soundSynth.playClick();
+            // Apply the suggested level without restarting the session:
+            // _onOperandLevelChanged() restarts Challenge when active, so
+            // suspend active briefly, apply, then restore the end screen.
+            const wasActive = this.challenge.active;
+            this.challenge.active = false;
+            this.setOperandLevel(next);
+            this.challenge.active = wasActive;
+            document.getElementById('challengePlayScreen').hidden = true;
+            document.getElementById('challengeEndScreen').hidden = false;
+            this._setHandControlsVisibility(false);
+            if (badge) badge.classList.remove('hm-oplevel-suggest');
+            msg.textContent = window.i18n.t('challenge.levelUpApplied', { n: next });
+            btn.remove();
+            this._announce(window.i18n.t('challenge.levelUpApplied', { n: next }));
+        });
+        box.appendChild(msg);
+        box.appendChild(btn);
+        if (badge) badge.classList.add('hm-oplevel-suggest');
+        if (window.i18n && !this._levelUpLangHook) {
+            this._levelUpLangHook = true;
+            window.i18n.onChange(() => {
+                const lb = document.getElementById('challengeLevelUp');
+                if (!lb || lb.hidden) return;
+                const nx = this.operandLevel + 1;
+                if (nx > OPERAND_LEVEL_COUNT) return;
+                const mx = getOperandLevelMax(nx);
+                const m = lb.querySelector('div');
+                const b = lb.querySelector('button');
+                if (m) m.textContent = window.i18n.t('challenge.levelUpMsg', { n: nx, min: 1, max: mx });
+                if (b) b.textContent = window.i18n.t('challenge.levelUpBtn', { n: nx });
+            });
+        }
+    }
+
+    _clearLevelUpSuggestion() {
+        const box = document.getElementById('challengeLevelUp');
+        if (box) { box.hidden = true; box.innerHTML = ''; }
+        const badge = document.getElementById('operandLevelBadge');
+        if (badge) badge.classList.remove('hm-oplevel-suggest');
     }
 
     _exitChallenge() {
@@ -1372,6 +1482,8 @@ class UiBindings {
         this.challenge.target = null;
 
         this._setHandControlsVisibility(false);
+
+        this._clearLevelUpSuggestion();
 
         document.getElementById('challengeStartScreen').hidden = false;
         document.getElementById('challengePlayScreen').hidden = true;
@@ -1880,8 +1992,16 @@ class UiBindings {
         const showHandControls = s.mode !== 'Help';
         const hcLeft = document.getElementById('handControlsLeft');
         const hcRight = document.getElementById('handControlsRight');
+        const hcBadge = document.getElementById('handValueBadge');
         if (hcLeft) hcLeft.hidden = !showHandControls;
         if (hcRight) hcRight.hidden = !showHandControls;
+        // Floating total between the steppers: visible whenever steppers
+        // are, except in Challenge (Challenge manages it per-question, and
+        // Level 6 hides hands entirely) and Help.
+        if (hcBadge) {
+            if (s.mode === 'Challenge' || s.mode === 'Help') hcBadge.hidden = true;
+            else hcBadge.hidden = !showHandControls;
+        }
 
         if (s.mode === 'Tutorial') {
             panelHeading.textContent = window.i18n.t('tab.tutorial');
