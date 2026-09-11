@@ -162,7 +162,7 @@ test.describe('In-app update checker', () => {
     await page.route(LATEST_JSON_URL, route => route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ tag: 'v1.0.5' })
+        body: JSON.stringify({ tag: 'v1.0.6' })
     }));
 
     await gotoApp(page);

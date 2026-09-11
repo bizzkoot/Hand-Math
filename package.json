@@ -1,6 +1,6 @@
 {
   "name": "hand-math-3d",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "3D Hand Visualization for Mathematical Calculations",
   "main": "index.html",
   "scripts": {
