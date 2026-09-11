@@ -60,6 +60,7 @@
   "update.checkFailedTitle": "Update check failed",
   "update.checkFailedText": "Could not reach GitHub. Check your internet connection and try again.",
   "update.rateLimitedText": "GitHub is limiting update checks from your network right now. Please try again in a little while.",
+  "update.rateLimitedNotice": "GitHub is limiting update checks from your network right now — showing the latest version number only. Please retry later for release notes and the direct download.",
   "update.retry": "Retry",
   "update.checkButton": "Check for updates",
   "update.checkTooltip": "Check GitHub for a newer release",

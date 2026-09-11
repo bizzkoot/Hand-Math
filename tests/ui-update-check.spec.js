@@ -114,9 +114,7 @@ test.describe('In-app update checker', () => {
   });
 
   test('network failure fails silently on auto-check and reports on manual check', async ({ page }) => {
-    // Both the API and the latest.json fallback must be dead for this path
     await page.route(RELEASES_URL, route => route.abort('connectionrefused'));
-    await page.route(LATEST_JSON_URL, route => route.abort('connectionrefused'));
 
     await gotoApp(page);
 
@@ -129,7 +127,7 @@ test.describe('In-app update checker', () => {
     await expect(page.locator('#updateModalTitle')).toContainText('failed');
   });
 
-  test('rate-limited API falls back to latest.json and still alerts', async ({ page }) => {
+  test('rate-limited API still alerts with installed-vs-latest versions from the tag file', async ({ page }) => {
     await page.route(RELEASES_URL, route => route.fulfill({
         status: 403,
         contentType: 'application/json',
@@ -142,14 +140,41 @@ test.describe('In-app update checker', () => {
     }));
 
     await gotoApp(page);
-    await page.evaluate(() => window.handMathApp.updateChecker.checkForUpdate(true));
 
-    await expect(page.locator('#updateModal')).toBeVisible();
-    await expect(page.locator('#updateModal')).toContainText('v9.9.9');
-    // No APK asset known from the fallback: download button points at the
+    // Auto-check alerts without user action, with installed-vs-latest
+    // versions plus a notice that GitHub is rate-limiting.
+    const modal = page.locator('#updateModal');
+    await expect(modal, { timeout: 20000 }).toBeVisible();
+    await expect(modal).toContainText('v9.9.9');
+    await expect(modal).toContainText('limiting');
+    // No APK asset known from the tag file: download button points at the
     // releases/latest page
-    const downloadLink = page.locator('#updateModalFoot a', { hasText: 'Download update' });
+    const downloadLink = modal.locator('a', { hasText: 'Download update' });
     await expect(downloadLink).toHaveAttribute('href', /releases\/latest$/);
+  });
+
+  test('rate-limited API with an up-to-date tag stays silent on auto, errors on manual', async ({ page }) => {
+    await page.route(RELEASES_URL, route => route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'API rate limit exceeded' })
+    }));
+    await page.route(LATEST_JSON_URL, route => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ tag: 'v1.0.5' })
+    }));
+
+    await gotoApp(page);
+
+    // Nothing newer: automatic path stays silent
+    await page.waitForTimeout(6000);
+    await expect(page.locator('#updateModal')).toBeHidden();
+
+    // Manual check explains the rate limit
+    await page.evaluate(() => window.handMathApp.updateChecker.checkForUpdate(true));
+    await expect(page.locator('#updateModalTitle')).toContainText('failed');
+    await expect(page.locator('#updateModal')).toContainText('limiting');
   });
 
   test('auto-checks are throttled: a recent successful check makes no network request', async ({ page }) => {

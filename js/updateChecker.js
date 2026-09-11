@@ -101,7 +101,9 @@ class UpdateChecker {
             window.HMSettings.set(window.HMSettings.KEYS.UPDATE_LAST_ATTEMPT, now);
             const release = await this._fetchLatestRelease();
             if (!release || !release.tag) {
-                window.HMSettings.set(window.HMSettings.KEYS.LAST_UPDATE_CHECK, now);
+                // No usable release info (e.g. draft with no tag): not a
+                // successful check, so do not record LAST_UPDATE_CHECK —
+                // the next auto-check may retry instead of waiting 3 hours.
                 if (force) this._showUpToDate(null);
                 return;
             }
@@ -121,7 +123,11 @@ class UpdateChecker {
             this._showUpdateModal(release);
         } catch (err) {
             try { console.warn('[UpdateChecker] check failed:', err && err.message ? err.message : err); } catch (_) {}
-            if (force) this._showError(UpdateChecker._isRateLimit(err));
+            if (UpdateChecker._isRateLimit(err)) {
+                await this._handleRateLimit(force, now);
+            } else if (force) {
+                this._showError(false);
+            }
         } finally {
             this._checking = false;
         }
@@ -132,62 +138,83 @@ class UpdateChecker {
         return /\b(403|429)\b/.test(msg);
     }
 
+    // Primary source, lnreader-style: the GitHub Releases API. Other
+    // failures (offline, timeout) propagate to the caller: auto checks stay
+    // silent and retry later, manual checks show an error.
     async _fetchLatestRelease() {
-        // Primary: GitHub REST API (rich data: exact APK asset URL).
+        return await this._fetchLatestReleaseFromApi();
+    }
+
+    // Rate-limit path only: the API gave 403/429, so read the tag-only
+    // latest.json (raw.githubusercontent.com — not API-rate-limited) to
+    // still tell the user installed-vs-latest. Never used for other errors,
+    // so a broken API response can't silently degrade into a tag-only alert.
+    async _handleRateLimit(force, now) {
+        let tagRelease = null;
         try {
-            return await this._fetchLatestReleaseFromApi();
-        } catch (err) {
-            // Fallback: the unauthenticated API allows only 60 requests/hour
-            // per IP (shared NAT/carrier networks exhaust it), so fall back
-            // to a tiny latest.json committed next to the release. It is
-            // served by raw.githubusercontent.com, which is NOT subject to
-            // the API rate limit and sends CORS headers (github.com pages do
-            // not, so the releases.atom feed cannot be fetched from JS).
-            try { console.warn('[UpdateChecker] API unavailable, trying latest.json fallback:', err && err.message); } catch (_) {}
-            return await this._fetchLatestReleaseFromLatestJson();
+            tagRelease = await this._fetchLatestTag();
+        } catch (_) { tagRelease = null; }
+        if (tagRelease && UpdateChecker.compareVersions(tagRelease.tag, this.currentVersion) > 0) {
+            window.HMSettings.set(window.HMSettings.KEYS.LAST_UPDATE_CHECK, now);
+            const skipped = window.HMSettings.get(window.HMSettings.KEYS.UPDATE_SKIP, null);
+            if (!force && skipped && UpdateChecker.compareVersions(tagRelease.tag, skipped) <= 0) {
+                return; // user already dismissed this release
+            }
+            tagRelease.rateLimited = true;
+            this._showUpdateModal(tagRelease);
+            return;
+        }
+        if (force) this._showError(true);
+    }
+
+    async _fetchLatestTag() {
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 10000);
+        try {
+            const resp = await fetch(`https://raw.githubusercontent.com/${this.repo}/main/latest.json`, {
+                cache: 'no-store',
+                signal: ctrl.signal
+            });
+            if (!resp.ok) throw new Error(`latest.json ${resp.status}`);
+            const data = await resp.json();
+            if (!data || typeof data.tag !== 'string' || !/^v?[\d]/.test(data.tag)) return null;
+            return {
+                tag: data.tag,
+                name: '',
+                notes: '',
+                htmlUrl: `https://github.com/${this.repo}/releases/latest`,
+                apkUrl: null
+            };
+        } finally {
+            clearTimeout(timeout);
         }
     }
 
     async _fetchLatestReleaseFromApi() {
         const url = `https://api.github.com/repos/${this.repo}/releases/latest`;
-        const resp = await fetch(url, {
-            headers: { 'Accept': 'application/vnd.github+json' },
-            cache: 'no-store'
-        });
-        if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
-        const data = await resp.json();
-        if (!data || !data.tag_name || (data.draft || false) === true) return null;
-        const apkAsset = (data.assets || []).find(a => a && typeof a.browser_download_url === 'string'
-            && /\.apk$/i.test(a.name || ''));
-        return {
-            tag: data.tag_name,
-            name: data.name || '',
-            notes: data.body || '',
-            htmlUrl: data.html_url || `https://github.com/${this.repo}/releases/latest`,
-            apkUrl: apkAsset ? apkAsset.browser_download_url : null
-        };
-    }
-
-    /**
-     * Fallback: parse latest.json from the repo (served by
-     * raw.githubusercontent.com — CORS-enabled and NOT API-rate-limited):
-     * { "tag": "v1.0.5" }. No APK asset URL or notes here; the modal falls
-     * back to the release page for the download.
-     */
-    async _fetchLatestReleaseFromLatestJson() {
-        const resp = await fetch(`https://raw.githubusercontent.com/${this.repo}/main/latest.json`, {
-            cache: 'no-store'
-        });
-        if (!resp.ok) throw new Error(`latest.json ${resp.status}`);
-        const data = await resp.json();
-        if (!data || typeof data.tag !== 'string' || !/^v?[\d]/.test(data.tag)) return null;
-        return {
-            tag: data.tag,
-            name: '',
-            notes: '',
-            htmlUrl: `https://github.com/${this.repo}/releases/latest`,
-            apkUrl: null
-        };
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 10000);
+        try {
+            const resp = await fetch(url, {
+                headers: { 'Accept': 'application/vnd.github+json' },
+                cache: 'no-store',
+                signal: ctrl.signal
+            });
+            if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+            const data = await resp.json();
+            if (!data || !data.tag_name || (data.draft || false) === true) return null;
+            const apkAsset = (data.assets || []).find(a => a && typeof a.browser_download_url === 'string'
+                && /\.apk$/i.test(a.name || ''));
+            return {
+                tag: data.tag_name,
+                name: data.name || '',
+                notes: data.body || '',
+                htmlUrl: data.html_url || `https://github.com/${this.repo}/releases/latest`,
+                apkUrl: apkAsset ? apkAsset.browser_download_url : null
+            };
+        } finally {
+            clearTimeout(timeout);
+        }
     }
 
     _ensureModal() {
@@ -303,6 +330,14 @@ class UpdateChecker {
             `Installed: v${this.currentVersion} · Latest: ${release.tag}`,
             { current: this.currentVersion, latest: release.tag });
         body.appendChild(versions);
+
+        if (release.rateLimited) {
+            const notice = document.createElement('p');
+            notice.className = 'hm-update-ratelimited';
+            notice.textContent = UpdateChecker._t('update.rateLimitedNotice',
+                'GitHub is limiting update checks from your network right now — showing the latest version number only. Please retry later for release notes and the direct download.');
+            body.appendChild(notice);
+        }
 
         const notesTitle = document.createElement('h4');
         notesTitle.textContent = UpdateChecker._t('update.releaseNotes', 'Release notes');

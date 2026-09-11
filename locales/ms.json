@@ -60,6 +60,7 @@
   "update.checkFailedTitle": "Semakan kemas kini gagal",
   "update.checkFailedText": "Tidak dapat menghubungi GitHub. Semak sambungan internet anda dan cuba lagi.",
   "update.rateLimitedText": "GitHub sedang menghadkan semakan kemas kini dari rangkaian anda buat sementara waktu. Cuba lagi sebentar lagi.",
+  "update.rateLimitedNotice": "GitHub sedang menghadkan semakan kemas kini dari rangkaian anda — hanya nombor versi terkini ditunjukkan. Sila cuba lagi kemudian untuk nota keluaran dan muat turun terus.",
   "update.retry": "Cuba lagi",
   "update.checkButton": "Semak kemas kini",
   "update.checkTooltip": "Semak GitHub untuk keluaran baharu",
